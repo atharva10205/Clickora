@@ -23,7 +23,11 @@ type Campaign = {
     percentUsed: number;
     vaultBalance: number;
     isInsufficient: boolean;
+    created_at: string;
 };
+
+type SortKey = 'date' | 'clicks' | 'spent' | 'status';
+type SortDir = 'asc' | 'desc';
 
 type Toast = {
     id: number;
@@ -81,6 +85,8 @@ const Campaigns = () => {
     const [accent, setAccent] = useState('#10B981');
     const [showBudgetPopup, setShowBudgetPopup] = useState(false);
     const [toasts, setToasts] = useState<Toast[]>([]);
+    const [sortKey, setSortKey] = useState<SortKey>('date');
+    const [sortDir, setSortDir] = useState<SortDir>('desc');
 
     const addToast = (message: string, type: Toast['type'] = 'error') =>
         setToasts(prev => [...prev, { id: Date.now(), message, type }]);
@@ -172,6 +178,20 @@ const Campaigns = () => {
         fetchCampaigns();
     }, []);
 
+    const sorted = [...campaigns].sort((a, b) => {
+        let diff = 0;
+        if (sortKey === 'date') diff = new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
+        if (sortKey === 'clicks') diff = a.clicks - b.clicks;
+        if (sortKey === 'spent') diff = a.spent - b.spent;
+        if (sortKey === 'status') diff = Number(b.status) - Number(a.status);
+        return sortDir === 'desc' ? -diff : diff;
+    });
+
+    const toggleSort = (key: SortKey) => {
+        if (sortKey === key) setSortDir(d => d === 'desc' ? 'asc' : 'desc');
+        else { setSortKey(key); setSortDir('desc'); }
+    };
+
     return (
         <>
             <ToastContainer toasts={toasts} onDismiss={dismissToast} />
@@ -193,7 +213,6 @@ const Campaigns = () => {
                 <main className="flex-1 p-8 overflow-y-auto">
                     <div className="max-w-6xl">
 
-                        {/* Header */}
                         <div className="flex items-center font-mono justify-between mb-10">
                             <div>
                                 <h1 className="text-3xl font-bold mb-1 text-white tracking-tight">Campaigns</h1>
@@ -202,7 +221,7 @@ const Campaigns = () => {
 
                             <button
                                 onClick={() => router.push("/Advertiser-campaign")}
-                                className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#161616] text-gray-200 text-sm font-semibold hover:-translate-y-0.5 active:translate-y-0 transition-all duration-200"
+                                className="flex cursor-pointer items-center gap-2 px-5 py-2.5 rounded-xl bg-[#161616] text-gray-200 text-sm font-semibold hover:-translate-y-0.5 active:translate-y-0 transition-all duration-200"
                                 style={{ border: `1px solid ${alpha(0.18)}` }}
                                 onMouseEnter={e => {
                                     e.currentTarget.style.borderColor = accent;
@@ -215,9 +234,30 @@ const Campaigns = () => {
                                     e.currentTarget.style.color = '';
                                 }}
                             >
-                                <Plus className="w-4 h-4" />
+                                <Plus className="w-4  h-4" />
                                 New Campaign
                             </button>
+                        </div>
+
+                        <div className="flex items-center gap-2 mb-6 font-mono">
+                            <span className="text-xs text-gray-600 mr-1">Sort:</span>
+                            {(['date', 'clicks', 'spent', 'status'] as SortKey[]).map(key => (
+                                <button
+                                    key={key}
+                                    onClick={() => toggleSort(key)}
+                                    className="flex cursor-pointer items-center gap-1 px-3 py-1.5 rounded-lg text-xs transition-all duration-150 border"
+                                    style={{
+                                        background: sortKey === key ? '#1a1a1a' : 'transparent',
+                                        borderColor: sortKey === key ? accent : 'rgba(255,255,255,0.08)',
+                                        color: sortKey === key ? accent : '#6b7280',
+                                    }}
+                                >
+                                    {key.charAt(0).toUpperCase() + key.slice(1)}
+                                    {sortKey === key && (
+                                        <span className="text-[10px]">{sortDir === 'desc' ? '↓' : '↑'}</span>
+                                    )}
+                                </button>
+                            ))}
                         </div>
 
                         {loading && (
@@ -237,7 +277,7 @@ const Campaigns = () => {
                         )}
 
                         <div className="grid gap-4">
-                            {campaigns.map((campaign) => {
+                            {sorted.map((campaign) => {
                                 const isActive = campaign.status === true;
 
                                 return (

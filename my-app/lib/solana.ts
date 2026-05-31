@@ -12,7 +12,7 @@ export function getProgram(Wallet: any, connection: Connection) {
     return new Program(IDL as any, provider);
 }
 
-export function getPDA(AdvertiserKey: PublicKey, adID: number[]) {
+export function getPDA(AdvertiserKey: PublicKey, adID: number[]) { 
 
     const programID = new PublicKey(PROGRAM_ID);
 

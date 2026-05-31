@@ -22,6 +22,7 @@ export async function GET() {
                     cost_per_click: true,
                     impression: true,
                     Cost: true,
+                    created_at: true,
                 }
             }),
             prisma.user.findUnique({

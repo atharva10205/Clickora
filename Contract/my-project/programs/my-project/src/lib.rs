@@ -18,9 +18,9 @@ pub mod my_project {
     }
 
     pub fn deposit(ctx: Context<Deposit>, amount: u64) -> Result<()> {
-        require!(ctx.accounts.ad.is_active, AdError::AdInactive);
         require!(amount > 0, AdError::InvalidAmount);
-
+        ctx.accounts.ad.is_active = true;
+        
         let fee = amount
             .checked_mul(PLATFORM_FEE_BASIS_POINTS)
             .ok_or(AdError::Overflow)?

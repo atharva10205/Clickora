@@ -40,12 +40,14 @@ const BarChart = ({
     label,
     color,
     formatValue,
+    overrideTotal,
 }: {
     campaigns: Campaign[];
     metric: 'clicks' | 'spend' | 'performance';
     label: string;
     color: string;
     formatValue?: (v: number) => string;
+    overrideTotal?: number;
 }) => {
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const chartRef = useRef<any>(null);
@@ -109,7 +111,7 @@ const BarChart = ({
         return () => chartRef.current?.destroy();
     }, [campaigns, metric, color]);
 
-    const total = campaigns.reduce((a, c) => a + Number(c[metric]), 0);
+    const total = overrideTotal ?? campaigns.reduce((a, c) => a + Number(c[metric]), 0);
 
     return (
         <div className="bg-[#0d0d0d] border border-[#1c1c1c] rounded-2xl shadow-[0_4px_24px_rgba(0,0,0,0.5)] flex-shrink-0 w-full">
@@ -499,7 +501,7 @@ const Dashboard = () => {
                                                         <span className="text-sm text-gray-200 truncate max-w-[150px] font-medium">{c.name}</span>
                                                     </div>
                                                     <div className="flex items-center gap-3 flex-shrink-0 ml-2">
-                                                        <span className="text-xs text-gray-500 tabular-nums">{sharePct.toFixed(0)}%</span>
+                                                        <span className="text-xs text-gray-500 tabular-nums">{sharePct.toFixed(0)}% spend</span>
                                                         <span className="text-sm font-semibold tabular-nums" style={{ color: accent }}>
                                                             {c.spend.toFixed(4)}
                                                             <span className="text-[10px] text-gray-600 font-normal ml-0.5">SOL</span>
@@ -520,7 +522,7 @@ const Dashboard = () => {
                                                         />
                                                     </div>
                                                     <span className="text-xs text-gray-500 tabular-nums flex-shrink-0 w-20 text-right whitespace-nowrap">
-                                                        {c.performance}% clicks
+                                                        {c.performance}% of clicks
                                                     </span>
                                                 </div>
                                                 <div className="flex items-center gap-3 mt-1.5">
@@ -573,6 +575,7 @@ const Dashboard = () => {
                                     metric="clicks"
                                     label="Clicks"
                                     color="#EDEDED"
+                                    overrideTotal={totalClicks}
                                     formatValue={v => v >= 1000 ? `${(v / 1000).toFixed(1)}K clicks` : `${v} clicks`}
                                 />
                             </div>
@@ -582,6 +585,7 @@ const Dashboard = () => {
                                     metric="spend"
                                     label="Spend"
                                     color={accent}
+                                    overrideTotal={totalSpend}
                                     formatValue={v => `${Number(v).toFixed(4)} SOL`}
                                 />
                             </div>
@@ -622,7 +626,7 @@ const Dashboard = () => {
                                 <tbody>
                                     {campaigns.map((c, idx) => (
                                         <tr key={c.name}
-                                            onClick={() => router.push(`/campaigns/${c.name.toLowerCase().replace(/\s+/g, '-')}`)}
+                                            onClick={() => router.push(`/Advertiser/Campaigns`)}
                                             className="border-t border-[#141414] hover:bg-[#111] transition-colors cursor-pointer">
                                             <td className="px-5 py-3.5 text-xs text-gray-700 tabular-nums">{idx + 1}</td>
                                             <td className="px-5 py-3.5 text-sm font-medium text-gray-200">{c.name}</td>

@@ -101,12 +101,6 @@ export default function Three({ next, back, adID }) {
     const ClintKey = useWallet();
     const router = useRouter();
 
-    useEffect(() => {
-        return () => {
-            navigator.sendBeacon("/api/crud/Advertiser-campaign-cleanup", JSON.stringify({ adID }));
-        };
-    }, [adID]);
-
     useEffect(() => { setErrors({}); }, [selected, Customclick]);
 
     const formatSOL = (amount: number): string => parseFloat(amount.toFixed(8)).toString();
@@ -199,7 +193,6 @@ export default function Three({ next, back, adID }) {
     return (
         <div className="min-h-screen bg-[#0a0a0a] text-gray-300">
 
-            {/* Header */}
             <header className="bg-[#0c0c0c] border-b border-[#1f1f1f]">
                 <div className="max-w-6xl mx-auto px-6">
                     <div className="flex items-center justify-between h-14">
@@ -223,7 +216,6 @@ export default function Three({ next, back, adID }) {
             <main className="max-w-6xl mx-auto px-6 py-8">
                 <div className="flex flex-col lg:flex-row gap-6">
 
-                    {/* Sidebar */}
                     <aside className="lg:w-56 flex-shrink-0">
                         <div className="bg-[#111111] border border-gray-800/70 rounded-xl p-5 sticky top-8">
                             <h3 className="text-xs font-semibold text-gray-200 uppercase tracking-widest mb-5">Business Information</h3>
@@ -382,7 +374,6 @@ export default function Three({ next, back, adID }) {
                                 )}
                             </div>
 
-                            {/* Footer */}
                             <div className="px-8 py-5 bg-[#0d0d0d] border-t border-gray-800/60 flex items-center justify-between">
                                 <button
                                     onClick={back}

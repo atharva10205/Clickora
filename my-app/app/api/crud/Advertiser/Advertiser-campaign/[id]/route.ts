@@ -56,17 +56,17 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
     const unclaimedClicks = await prisma.click.count({
         where: { ad_id: id, claimed: false }
     });
-  return NextResponse.json({
-    ad,
-    analytics: {
-        totalClicks,
-        totalImpressions: totalImpressions,
-        ctr,
-        budgetUsed,
-        unclaimedClicks,
-    },
-    accent: user?.accent ?? '#ffffff',
-});
+    return NextResponse.json({
+        ad,
+        analytics: {
+            totalClicks,
+            totalImpressions: totalImpressions,
+            ctr,
+            budgetUsed,
+            unclaimedClicks,
+        },
+        accent: user?.accent ?? '#ffffff',
+    });
 }
 
 export async function PATCH(req: Request, { params }: { params: Promise<{ id: string }> }) {
@@ -85,6 +85,24 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
     return NextResponse.json({ success: true, updated });
 }
 
+export async function DELETE(req: Request, { params }: { params: Promise<{ id: string }> }) {
+    const session = await auth();
+    if (!session?.user?.email) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+    const { id } = await params;
+
+    const ad = await prisma.ad.findFirst({
+        where: { id },
+        select: { wallet_address: true },
+    });
+
+    if (!ad) return NextResponse.json({ error: "Ad not found" }, { status: 404 });
+
+    await prisma.ad.delete({ where: { id } });
+
+    return NextResponse.json({ success: true });
+}
+
 export async function PUT(req: Request, { params }: { params: Promise<{ id: string }> }) {
     const session = await auth();
     if (!session?.user?.email) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -93,8 +111,51 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
 
     await prisma.ad.update({
         where: { id },
-        data: { status: false, RemainingAmount: 0 }
+        data: { status: false, RemainingAmount: 0,Clicks: 0 }
     });
 
     return NextResponse.json({ success: true });
+}
+
+export async function POST(req: Request, { params }: { params: Promise<{ id: string }> }) {
+    const { id } = await params;
+
+    const { additionalClicks, additionalSOL, additionalLamports } = await req.json();
+
+    if (
+        typeof additionalClicks !== "number" || additionalClicks <= 0 ||
+        typeof additionalSOL !== "number" || additionalSOL <= 0 ||
+        typeof additionalLamports !== "number" || additionalLamports <= 0
+    ) {
+        return NextResponse.json({ error: "Invalid body" }, { status: 400 });
+    }
+
+    const current = await prisma.ad.findUnique({
+        where: { id },
+        select: {
+            Clicks: true,
+            Cost: true,
+            RemainingAmount: true,
+        },
+    });
+
+    if (!current) {
+        return NextResponse.json({ error: "Ad not found" }, { status: 404 });
+    }
+
+    const newClicks = (current.Clicks ?? 0) + additionalClicks;
+    const newCost = (parseFloat(current.Cost ?? "0") + additionalSOL).toString();
+    const newRemaining = (current.RemainingAmount ?? 0) + additionalLamports;
+
+    const updated = await prisma.ad.update({
+        where: { id },
+        data: {
+            Clicks: newClicks,
+            Cost: newCost,
+            RemainingAmount: newRemaining,
+            status: true,
+        },
+    });
+
+    return NextResponse.json({ success: true, updated });
 }

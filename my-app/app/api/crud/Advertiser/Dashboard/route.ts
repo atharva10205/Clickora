@@ -10,43 +10,51 @@ export async function GET(req: Request) {
     }
 
     const ads = await prisma.ad.findMany({
-        where: { user_email: session.user.email },
-        select: {
-            id: true,
-            business_name: true,
-            cost_per_click: true,
-            status: true,
-            Clicks: true,  // ✅ use stored Clicks field
-        }
-    });
+    where: { user_email: session.user.email },
+    select: {
+        id: true,
+        business_name: true,
+        cost_per_click: true,
+        status: true,
+    }
+});
 
-    const campaignIds = ads.map(a => a.id);
+const campaignIds = ads.map(a => a.id);
 
-    // Total clicks from Click table (for TotalClicks stat card)
-    const TotalClicks = await prisma.click.count({
+const [TotalClicks, clickData] = await Promise.all([
+    prisma.click.count({
         where: { ad_id: { in: campaignIds } }
-    });
+    }),
+    prisma.click.findMany({
+        where: { ad_id: { in: campaignIds } },
+        select: { ad_id: true }
+    })
+]);
 
-    // ✅ Use stored Clicks field from Ad model
-    const totalClicksForShare = ads.reduce((sum, a) => sum + (a.Clicks ?? 0), 0);
+const clickMap: Record<string, number> = {};
+for (const click of clickData) {
+    clickMap[click.ad_id] = (clickMap[click.ad_id] ?? 0) + 1;
+}
 
-    const campaigns = ads.map(ad => {
-        const clicks = ad.Clicks ?? 0;
-        const cpc = Number(ad.cost_per_click ?? 0);
-        const spend = clicks * cpc;
-        // ✅ performance = this campaign's share of total clicks
-        const performance = totalClicksForShare > 0 ? Math.round((clicks / totalClicksForShare) * 100) : 0;
+const rawCampaigns = ads.map(ad => {
+    const clicks = clickMap[ad.id] ?? 0;
+    const cpc = Number(ad.cost_per_click ?? 0);
+    const spend = clicks * cpc;
+    return {
+        name: ad.business_name ?? 'Unnamed Campaign',
+        clicks,
+        cpc: cpc.toFixed(9),
+        status: (ad.status ? 'Active' : 'Paused') as 'Active' | 'Paused',
+        spend: Number(spend.toFixed(4)),
+    };
+});
 
-        return {
-            name: ad.business_name ?? 'Unnamed Campaign',
-            clicks,
-            cpc: cpc.toFixed(9),
-            status: (ad.status ? 'Active' : 'Paused') as 'Active' | 'Paused',
-            performance,
-            spend: Number(spend.toFixed(4)),
-        };
-    });
+const userTotalClicks = rawCampaigns.reduce((sum, c) => sum + c.clicks, 0);
 
+const campaigns = rawCampaigns.map(c => ({
+    ...c,
+    performance: userTotalClicks > 0 ? Math.round((c.clicks / userTotalClicks) * 100) : 0,
+}));
     const TotalSpend = campaigns.reduce((sum, c) => sum + c.spend, 0);
     const ActiveCampaigns = ads.filter(a => a.status).length;
 
