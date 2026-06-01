@@ -98,10 +98,10 @@ const Analytics = () => {
     }
 
     return (
-        <div className="flex h-screen bg-[#0a0a0a] text-gray-200 font-mono">
+        <div className="flex h-screen bg-[#0a0a0a] text-gray-200">
             <Sidebar activeTab={activeTab} />
 
-            <main className="flex-1 p-6 overflow-y-auto">
+            <main className="flex-1 p-6 overflow-y-auto font-mono">
 
                 {/* Header */}
                 <div className="flex items-center justify-between mb-6">
@@ -135,64 +135,64 @@ const Analytics = () => {
 
                 {/* Chart */}
                 <div className="bg-[#0d0d0d] border border-[#1c1c1c] rounded-2xl p-5 mb-4">
-    <div className="flex items-center justify-between mb-5">
-        <div>
-            <h2 className="text-sm font-semibold text-white">Performance Trends</h2>
-            <p className="text-xs text-gray-600 mt-0.5">Last 7 days</p>
-        </div>
-        <div className="flex items-center gap-4 text-xs text-gray-600">
-            <span className="flex items-center gap-1.5">
-                <span
-                    className="w-5 inline-block"
-                    style={{ borderTop: `1.5px solid ${accent}` }}
-                />
-                Clicks
-            </span>
-        </div>
-    </div>
+                    <div className="flex items-center justify-between mb-5">
+                        <div>
+                            <h2 className="text-sm font-semibold text-white">Performance Trends</h2>
+                            <p className="text-xs text-gray-600 mt-0.5">Last 7 days</p>
+                        </div>
+                        <div className="flex items-center gap-4 text-xs text-gray-600">
+                            <span className="flex items-center gap-1.5">
+                                <span
+                                    className="w-5 inline-block"
+                                    style={{ borderTop: `1.5px solid ${accent}` }}
+                                />
+                                Clicks
+                            </span>
+                        </div>
+                    </div>
 
-    <ResponsiveContainer width="100%" height={260}>
-        <LineChart data={chartData}>
-            <CartesianGrid strokeDasharray="3 3" stroke="#161616" />
-            <XAxis
-                dataKey="date"
-                stroke="#2a2a2a"
-                tick={{ fill: '#444', fontSize: 10, fontFamily: 'monospace' }}
-                tickFormatter={d => {
-                    const date = new Date(d);
-                    return `${date.getMonth() + 1}/${date.getDate()}`;
-                }}
-            />
-            <YAxis
-                stroke="#2a2a2a"
-                tick={{ fill: '#444', fontSize: 10 }}
-                tickFormatter={v => v >= 1000 ? `${(v / 1000).toFixed(0)}K` : v}
-            />
-            <Tooltip
-                contentStyle={{
-                    backgroundColor: '#111',
-                    border: '1px solid #222',
-                    borderRadius: '8px',
-                    color: '#e5e7eb',
-                    fontSize: '11px',
-                    fontFamily: 'monospace'
-                }}
-                labelFormatter={d => {
-                    const date = new Date(d);
-                    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-                }}
-            />
-            <Line
-                type="monotone"
-                dataKey="clicks"
-                stroke={accent}
-                strokeWidth={1.5}
-                dot={false}
-                activeDot={{ r: 4, fill: accent }}
-            />
-        </LineChart>
-    </ResponsiveContainer>
-</div>
+                    <ResponsiveContainer width="100%" height={260}>
+                        <LineChart data={chartData}>
+                            <CartesianGrid strokeDasharray="3 3" stroke="#161616" />
+                            <XAxis
+                                dataKey="date"
+                                stroke="#2a2a2a"
+                                tick={{ fill: '#444', fontSize: 10, fontFamily: 'monospace' }}
+                                tickFormatter={d => {
+                                    const date = new Date(d);
+                                    return `${date.getMonth() + 1}/${date.getDate()}`;
+                                }}
+                            />
+                            <YAxis
+                                stroke="#2a2a2a"
+                                tick={{ fill: '#444', fontSize: 10 }}
+                                tickFormatter={v => v >= 1000 ? `${(v / 1000).toFixed(0)}K` : v}
+                            />
+                            <Tooltip
+                                contentStyle={{
+                                    backgroundColor: '#111',
+                                    border: '1px solid #222',
+                                    borderRadius: '8px',
+                                    color: '#e5e7eb',
+                                    fontSize: '11px',
+                                    fontFamily: 'monospace'
+                                }}
+                                labelFormatter={d => {
+                                    const date = new Date(d);
+                                    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+                                }}
+                            />
+                            <Line
+                                type="monotone"
+                                dataKey="clicks"
+                                stroke={accent}
+                                strokeWidth={1.5}
+                                dot={false}
+                                activeDot={{ r: 4, fill: accent }}
+                            />
+                        </LineChart>
+                    </ResponsiveContainer>
+                </div>
 
                 {/* Top Sites */}
                 <div className="bg-[#0d0d0d] border border-[#1c1c1c] rounded-2xl p-5">

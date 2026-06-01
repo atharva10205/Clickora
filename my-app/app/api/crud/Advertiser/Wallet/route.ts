@@ -60,12 +60,14 @@ export async function GET() {
         date: ad.updated_at,
         status: ad.status ? 'Active' : 'Inactive',
       };
-    });
+    });const totalSpent = ads.reduce((sum, ad) => {
+    const budget = ad.Cost ? Number(ad.Cost) : 0;                          
+    const remaining = ad.RemainingAmount ? Number(ad.RemainingAmount) / 1e9 : 0; 
+    return sum + (budget - remaining);
+}, 0);
 
-    // Summary totals
-    const totalSpent = transactions.reduce((sum, t) => sum + t.rawAmount, 0);
-    const totalClicks = transactions.reduce((sum, t) => sum + t.clicks, 0);
-    const availableBalance = ads.reduce((sum, ad) => sum + (ad.RemainingAmount ? Number(ad.RemainingAmount) : 0), 0);
+const totalClicks = transactions.reduce((sum, t) => sum + t.clicks, 0);
+const availableBalance = ads.reduce((sum, ad) => sum + (ad.RemainingAmount ? Number(ad.RemainingAmount) : 0), 0); 
 
     return NextResponse.json({
       walletAddress,

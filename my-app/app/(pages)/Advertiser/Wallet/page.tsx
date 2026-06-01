@@ -50,18 +50,18 @@ function shortenAddress(addr: string): string {
 const Wallet = () => {
   const activeTab = 'Wallet';
 
-  const [data, setData]             = useState<WalletData | null>(null);
-  const [loading, setLoading]       = useState(true);
-  const [error, setError]           = useState<string | null>(null);
-  const [copied, setCopied]         = useState(false);
+  const [data, setData] = useState<WalletData | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
-  const [accent, setAccent]         = useState('#ffffff');
+  const [accent, setAccent] = useState('#ffffff');
 
   // Derived color helpers — always in sync with accent state
-  const alpha  = (op: number) => `rgba(255,255,255,${op})`;
-  const hR     = parseInt(accent.slice(1, 3), 16);
-  const hG     = parseInt(accent.slice(3, 5), 16);
-  const hB     = parseInt(accent.slice(5, 7), 16);
+  const alpha = (op: number) => `rgba(255,255,255,${op})`;
+  const hR = parseInt(accent.slice(1, 3), 16);
+  const hG = parseInt(accent.slice(3, 5), 16);
+  const hB = parseInt(accent.slice(5, 7), 16);
   const hAlpha = (op: number) => `rgba(${hR},${hG},${hB},${op})`;
 
   const fetchWallet = useCallback(async (silent = false) => {
@@ -103,7 +103,7 @@ const Wallet = () => {
         <main className="flex-1 p-8 overflow-y-auto flex flex-col gap-6">
           <div className="h-10 w-48 bg-[#161616] rounded-xl animate-pulse" />
           <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-            {[0,1,2].map(i => <div key={i} className="h-36 bg-[#111111] border border-gray-800/50 rounded-xl animate-pulse" />)}
+            {[0, 1, 2].map(i => <div key={i} className="h-36 bg-[#111111] border border-gray-800/50 rounded-xl animate-pulse" />)}
           </div>
           <div className="h-96 bg-[#111111] border border-gray-800/50 rounded-xl animate-pulse" />
         </main>
@@ -204,12 +204,11 @@ const Wallet = () => {
               Available Balance
             </div>
             <p className="text-3xl font-bold font-mono tabular-nums" style={{ color: accent }}>
-             {((data?.availableBalance ?? 0) / 1e9).toFixed(4)}
+              {((data?.availableBalance ?? 0) / 1e9).toFixed(4)}
               <span className="text-lg text-gray-500 ml-1.5">SOL</span>
             </p>
           </div>
 
-          {/* Wallet Address */}
           <div
             className="bg-[#111111] p-6 rounded-xl transition-all duration-200"
             style={{ border: `1px solid ${alpha(0.08)}` }}
@@ -295,11 +294,10 @@ const Wallet = () => {
                     </div>
 
                     <div className="col-span-2 text-right">
-                      <span className={`text-xs px-2 py-0.5 rounded font-mono tracking-wide border ${
-                        tx.status === 'Active'
-                          ? 'bg-gray-800 text-gray-300 border-gray-700'
-                          : 'bg-[#1a1a1a] text-gray-500 border-gray-800'
-                      }`}>
+                      <span className={`text-xs px-2 py-0.5 rounded font-mono tracking-wide border ${tx.status === 'Active'
+                        ? 'bg-gray-800 text-gray-300 border-gray-700'
+                        : 'bg-[#1a1a1a] text-gray-500 border-gray-800'
+                        }`}>
                         {tx.status}
                       </span>
                     </div>

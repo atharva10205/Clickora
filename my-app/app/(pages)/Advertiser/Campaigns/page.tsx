@@ -23,6 +23,7 @@ type Campaign = {
     percentUsed: number;
     vaultBalance: number;
     isInsufficient: boolean;
+    isNewCampaign?: boolean; // Track new campaigns during grace period
     created_at: string;
 };
 
@@ -102,8 +103,15 @@ const Campaigns = () => {
                 const rawCampaigns = Array.isArray(data) ? data : (data.campaigns ?? []);
                 const programId = new PublicKey("5AhkXaS77PEWP8pDdQx3SMDbEizqJFns6an8J42dXUuw");
 
+                // Grace period: 2 minutes for on-chain state to sync
+                const GRACE_PERIOD_MS = 2 * 60 * 1000;
+                const now = Date.now();
+
                 const enriched = await Promise.all(
                     rawCampaigns.map(async (c: any) => {
+                        const createdAt = new Date(c.created_at).getTime();
+                        const isNewCampaign = (now - createdAt) < GRACE_PERIOD_MS;
+
                         if (!c.wallet_address) {
                             console.warn(`Campaign ${c.id} has no wallet_address, skipping vault balance check`);
                             const spent = (c.clicks ?? 0) * Number(c.cost_per_click ?? 0);
@@ -117,6 +125,7 @@ const Campaigns = () => {
                                 percentUsed: budget > 0 ? Math.min(Math.round((spent / budget) * 100), 100) : 0,
                                 cpc: cpc.toFixed(6),
                                 isInsufficient: true,
+                                isNewCampaign,
                             };
                         }
 
@@ -130,9 +139,10 @@ const Campaigns = () => {
                             const spent = (c.clicks ?? 0) * Number(c.cost_per_click ?? 0);
                             const budget = Number(c.Cost ?? 0);
                             const cpc = c.cost_per_click ? Number(c.cost_per_click) : 0;
-                            const isInsufficient = vaultBalance / 1e9 < cpc;
+                            // Don't mark as insufficient during grace period for new campaigns
+                            const isInsufficient = isNewCampaign ? false : (vaultBalance / 1e9 < cpc);
 
-                            if (isInsufficient) {
+                            if (isInsufficient && !isNewCampaign) {
                                 await fetch("/api/crud/Advertiser/Campaings", {
                                     method: "PATCH",
                                     headers: { "content-type": "application/json" },
@@ -148,6 +158,7 @@ const Campaigns = () => {
                                 percentUsed: budget > 0 ? Math.min(Math.round((spent / budget) * 100), 100) : 0,
                                 cpc: cpc.toFixed(6),
                                 isInsufficient,
+                                isNewCampaign,
                             };
                         } catch (error) {
                             console.error(`Error processing campaign ${c.id}:`, error);
@@ -161,7 +172,8 @@ const Campaigns = () => {
                                 spent: parseFloat(spent.toFixed(6)),
                                 percentUsed: budget > 0 ? Math.min(Math.round((spent / budget) * 100), 100) : 0,
                                 cpc: cpc.toFixed(6),
-                                isInsufficient: true,
+                                isInsufficient: !isNewCampaign, // Don't mark insufficient during grace period
+                                isNewCampaign,
                             };
                         }
                     })
@@ -298,7 +310,9 @@ const Campaigns = () => {
                                             <div className="flex items-start justify-between mb-6">
                                                 <div className="flex-1">
                                                     <div className="flex items-center gap-3 mb-1.5">
-                                                        <h3 className="text-lg font-semibold text-white tracking-tight font-mono">
+                                                        <h3
+                                                            onClick={() => router.push(`/Advertiser/Advertiser_campaigns/${campaign.id}`)}
+                                                            className="text-lg font-semibold cursor-pointer text-white tracking-tight font-mono">
                                                             {campaign.business_name}
                                                         </h3>
                                                         <span className={`text-xs px-2 py-0.5 rounded font-mono tracking-wide border ${isActive
@@ -310,6 +324,11 @@ const Campaigns = () => {
                                                             )}
                                                             {isActive ? 'ACTIVE' : 'PAUSED'}
                                                         </span>
+                                                        {campaign.isNewCampaign && (
+                                                            <span className="text-xs px-2 py-0.5 rounded font-mono tracking-wide border bg-blue-950/30 text-blue-400 border-blue-900/50">
+                                                                NEW (Syncing...)
+                                                            </span>
+                                                        )}
                                                     </div>
                                                     <p className="text-xs text-gray-600 font-mono">
                                                         {campaign.destination_url}
@@ -319,7 +338,7 @@ const Campaigns = () => {
                                                 <div className="flex gap-2">
                                                     <button
                                                         onClick={async () => {
-                                                            if (campaign.isInsufficient) {
+                                                            if (campaign.isInsufficient && !campaign.isNewCampaign) {
                                                                 addToast("Your vault balance is too low to display this ad. Please add more SOL to your vault.");
                                                                 return;
                                                             }
@@ -334,10 +353,10 @@ const Campaigns = () => {
                                                             );
                                                         }}
                                                         className="p-2 rounded-lg bg-[#161616] border border-gray-800/60 text-gray-500 hover:text-gray-200 cursor-pointer hover:border-gray-600 transition-all duration-150"
-                                                        title={campaign.isInsufficient ? 'Insufficient budget' : isActive ? 'Pause' : 'Resume'}
+                                                        title={campaign.isInsufficient && !campaign.isNewCampaign ? 'Insufficient budget' : isActive ? 'Pause' : 'Resume'}
                                                     >
                                                         {isActive ? <Pause className="w-4 h-4" /> : (
-                                                            <Play className={`w-4 h-4 ${campaign.isInsufficient ? 'text-red-500' : ''}`} />
+                                                            <Play className={`w-4 h-4 ${campaign.isInsufficient && !campaign.isNewCampaign ? 'text-red-500' : ''}`} />
                                                         )}
                                                     </button>
                                                     <button

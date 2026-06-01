@@ -26,7 +26,7 @@ type Website = {
     revenue: number;
 };
 
-const DEFAULT_ACCENT = '#4ADE80';
+const DEFAULT_ACCENT = '#FFFFFF'; 
 
 const hexToRgb = (hex: string) => {
     const safe = (hex ?? DEFAULT_ACCENT).replace(/[^0-9a-fA-F]/g, '').padEnd(6, '0');
@@ -373,7 +373,7 @@ const Dashboard = () => {
                                 <p className="text-xs text-gray-600 mb-5 max-w-xs">Add your first property to start tracking earnings</p>
                                 <button
                                     onClick={() => router.push("/Publisher-campaign")}
-                                    className="px-4 py-2 rounded-lg text-xs font-semibold transition-all"
+                                    className="px-4 py-2 rounded-lg text-xs font-semibold transition-all hover:opacity-90"
                                     style={{ background: accent, color: '#000000' }}
                                 >
                                     Add Site

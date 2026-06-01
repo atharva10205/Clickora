@@ -22,6 +22,7 @@ type AdData = {
     Cost: string | null;
     RemainingAmount: number | null;
     status: boolean;
+    AmountNull: boolean | null;
 };
 
 type Analytics = {
@@ -117,7 +118,7 @@ const CampaignPage = () => {
 
             const { adPDA, vaultPDA } = getPDA(advertiserKey, AdId);
 
-            
+
 
             const tx = await program.methods
                 .deposit(new BN(addFundsLamports))
@@ -300,7 +301,15 @@ const CampaignPage = () => {
             const signature = await wallet.sendTransaction(txn, walletConnection);
 
             await walletConnection.confirmTransaction({ signature, blockhash, lastValidBlockHeight }, 'confirmed');
-            await fetch(`/api/crud/Advertiser/Advertiser-campaign/${id}`, { method: 'PUT' });
+            await fetch(`/api/crud/Advertiser/Advertiser-campaign/${id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    tx_signature: signature,
+                    publisher_wallet: withdrawAddress,
+                    total_amount: vaultBalance,
+                }),
+            });
 
             setAd(prev => prev ? { ...prev, status: false, RemainingAmount: 0 } : prev);
             setVaultBalance(0);
@@ -327,7 +336,7 @@ const CampaignPage = () => {
         setDeleting(true);
         try {
             await fetch(`/api/crud/Advertiser/Advertiser-campaign/${id}`, { method: 'DELETE' });
-            router.push('/dashboard');
+            router.push('Advertiser/Campaigns');
         } catch (err) {
             console.error("Delete failed:", err);
             showToast("Failed to delete campaign. Please try again.");
@@ -338,20 +347,12 @@ const CampaignPage = () => {
 
     const handleDeleteClick = async () => {
         if (!Wallet_Address || !ad?.id) return;
-        try {
-            const PROGRAM_ID = new PublicKey("5AhkXaS77PEWP8pDdQx3SMDbEizqJFns6an8J42dXUuw");
-            const adIdBytes = adIdToBytes(ad.id);
-            const [vaultPDA] = PublicKey.findProgramAddressSync(
-                [Buffer.from("vault"), new PublicKey(Wallet_Address).toBuffer(), Buffer.from(adIdBytes)],
-                PROGRAM_ID
-            );
-            const lamports = await connection.getBalance(vaultPDA);
-            if (lamports > 0) {
-                showToast("Withdraw remaining funds before deleting this campaign.");
-                return;
-            }
-        } catch {
+
+        if (ad.AmountNull !== true) {
+            showToast("Withdraw remaining funds before deleting this campaign.");
+            return;
         }
+
         setShowDeleteModal(true);
     };
 
@@ -521,12 +522,20 @@ const CampaignPage = () => {
                             }}
                         />
                     </div>
-                    <div className="flex justify-between mt-3">
-                        <span className="text-[10px] text-gray-700">
-                            Spent · <span className="text-gray-500">{ad?.Cost ? (parseFloat(ad.Cost) * budgetUsedNum / 100).toFixed(4) : '—'} SOL</span>
+                    <div className="flex text-[12px] justify-between mt-3">
+                        <span className="text-[12px] text-gray-700">
+                            Spent ·<span className="text-gray-500">
+                                {ad?.cost_per_click && analytics
+                                    ? (analytics.totalClicks * parseFloat(ad.cost_per_click)).toFixed(4)
+                                    : '—'} SOL
+                            </span>
                         </span>
-                        <span className="text-[10px] text-gray-700">
-                            Total · <span className="text-gray-500">{ad?.Cost ?? '—'} SOL</span>
+                        <span className="text-[12px] text-gray-700">
+                            Total · <span className="text-gray-500">
+                                {ad?.cost_per_click && analytics && vaultBalance !== null
+                                    ? ((analytics.totalClicks * parseFloat(ad.cost_per_click)) + vaultBalance).toFixed(4)
+                                    : '—'} SOL
+                            </span>
                         </span>
                     </div>
                 </div>

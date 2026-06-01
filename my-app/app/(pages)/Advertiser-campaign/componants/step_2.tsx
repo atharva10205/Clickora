@@ -80,7 +80,7 @@ useEffect(() => {
             );
         }
     };
-}, []); // ← empty array: only fires on true unmount, not on adID change
+}, []);
 
 
     useEffect(() => { setErrors({}); }, [description, input, KeyWords, selectedTags, Title, imageFile]);

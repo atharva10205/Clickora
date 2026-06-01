@@ -26,7 +26,8 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
                 impression: true,
                 status: true,
                 created_at: true,
-                wallet_address: true
+                wallet_address: true,
+                AmountNull: true,
             }
         }),
         prisma.user.findUnique({
@@ -49,9 +50,10 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
         ? ((totalClicks / totalImpressions) * 100).toFixed(2)
         : "0.00";
 
-    const costLamports = ad.Cost ? Number(ad.Cost) * 1_000_000_000 : 0;
-    const budgetUsed = costLamports > 0 && ad.RemainingAmount != null
-        ? (((costLamports - ad.RemainingAmount) / costLamports) * 100).toFixed(1)
+    const totalBudgetSOL = ad.Cost ? Number(ad.Cost) : 0;
+    const spentSOL = totalClicks * (ad.cost_per_click ? Number(ad.cost_per_click) : 0);
+    const budgetUsed = totalBudgetSOL > 0
+        ? ((spentSOL / totalBudgetSOL) * 100).toFixed(1)
         : "0.0";
     const unclaimedClicks = await prisma.click.count({
         where: { ad_id: id, claimed: false }
@@ -84,6 +86,15 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
 
     return NextResponse.json({ success: true, updated });
 }
+import { S3Client, DeleteObjectCommand } from "@aws-sdk/client-s3";
+
+const s3Client = new S3Client({
+    region: process.env.AWS_REGION!,
+    credentials: {
+        accessKeyId: process.env.AWS_ACCESS_KEY_ID!,
+        secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY!,
+    },
+});
 
 export async function DELETE(req: Request, { params }: { params: Promise<{ id: string }> }) {
     const session = await auth();
@@ -93,25 +104,52 @@ export async function DELETE(req: Request, { params }: { params: Promise<{ id: s
 
     const ad = await prisma.ad.findFirst({
         where: { id },
-        select: { wallet_address: true },
+        select: { wallet_address: true, imageUrl: true },
     });
 
     if (!ad) return NextResponse.json({ error: "Ad not found" }, { status: 404 });
+
+    if (ad.imageUrl) {
+        try {
+            const url = new URL(ad.imageUrl);
+            const key = url.pathname.slice(1);
+
+            await s3Client.send(new DeleteObjectCommand({
+                Bucket: process.env.AWS_S3_BUCKET_NAME!,
+                Key: key,
+            }));
+        } catch (err) {
+            console.error("Failed to delete S3 image:", err);
+        }
+    }
 
     await prisma.ad.delete({ where: { id } });
 
     return NextResponse.json({ success: true });
 }
-
 export async function PUT(req: Request, { params }: { params: Promise<{ id: string }> }) {
     const session = await auth();
     if (!session?.user?.email) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
     const { id } = await params;
 
+    const { tx_signature, publisher_wallet, total_amount } = await req.json();
+
     await prisma.ad.update({
         where: { id },
-        data: { status: false, RemainingAmount: 0,Clicks: 0 }
+        data: { status: false, RemainingAmount: 0, Clicks: 0, AmountNull: true }
+    });
+
+    await prisma.withdrawalRecord.create({
+        data: {
+            id: crypto.randomUUID(),
+            publisher_wallet: publisher_wallet ?? "",
+            tx_signature: tx_signature ?? null,
+            total_amount: total_amount ?? 0,
+            ad_ids: [id],
+            status: "CONFIRMED",
+            confirmed_at: new Date(),
+        }
     });
 
     return NextResponse.json({ success: true });
@@ -154,6 +192,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
             Cost: newCost,
             RemainingAmount: newRemaining,
             status: true,
+            AmountNull: false,
         },
     });
 

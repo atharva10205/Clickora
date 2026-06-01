@@ -14,28 +14,29 @@ model User {
   created_at DateTime @default(now())
   role       String?
   image      String?
-  accent String? @default("#FFFFFF")
+  accent     String?  @default("#FFFFFF")
 }
 
 model Ad {
   id              String   @id @default(uuid())
-  user_email      String
   business_name   String?
   destination_url String?
-  title           String?
   Description     String?
-  Tags            String[]
-  keywords        String[]
   wallet_address  String?
   cost_per_click  Decimal? @db.Decimal(18, 9)
-  Clicks          Int?
-  Cost            Decimal? @db.Decimal(18, 9)
+  user_email      String
+  Tags            String[]
+  keywords        String[]
+  title           String?
   imageUrl        String?
   created_at      DateTime @default(now())
   updated_at      DateTime @default(now()) @updatedAt
+  Clicks          Int?
+  Cost            Decimal? @db.Decimal(18, 9)
   impression      Int?
   status          Boolean  @default(true)
   RemainingAmount Int?
+  AmountNull      Boolean?
 }
 
 model Publisher {
@@ -46,7 +47,7 @@ model Publisher {
   Tags           String[]
   keywords       String[]
   wallet_address String?
-  status         String?  @default("INACTIVE")
+  status         String?  @default("ACTIVE")
   created_at     DateTime @default(now())
   updated_at     DateTime @default(now()) @updatedAt
 }
@@ -55,8 +56,8 @@ model Impression {
   id            String   @id @default(uuid())
   ad_id         String
   publisher_id  String
-  publisher_url String
   impression    Int
+  publisher_url String
   created_at    DateTime @default(now())
 
   @@unique([ad_id, publisher_id, publisher_url])
@@ -71,19 +72,38 @@ model Click {
   claimed       Boolean   @default(false)
   claimed_at    DateTime?
   created_at    DateTime  @default(now())
-  calculated Boolean  @default(false)
-
+  calculated    Boolean   @default(false)
 }
 
 model EarningsRecord {
-  id               String    @id @default(uuid())
-  publisher_wallet String
-  ad_id            String
-  claimable_amount Int
-  settled          Boolean   @default(false)
-  tx_signature     String?
-  settled_at       DateTime?
-  created_at       DateTime  @default(now())
+  id                String    @id @default(uuid())
+  publisher_wallet  String
+  ad_id             String
+  claimable_amount  Int
+  settled           Boolean   @default(false)
+  settled_at        DateTime?
+  created_at        DateTime  @default(now())
+  advertiser_wallet String
+  updated_at        DateTime  @default(now())
 
   @@unique([publisher_wallet, ad_id])
+}
+
+model WithdrawalRecord {
+  id               String    @id
+  publisher_wallet String
+  tx_signature     String?
+  total_amount     Int
+  ad_ids           String[]
+  status           String    @default("PENDING")
+  created_at       DateTime  @default(now())
+  confirmed_at     DateTime?
+}
+
+model Conversion {
+  id         String   @id @default(uuid())
+  ad_id      String
+  revenue    Decimal
+  type       String   @default("purchase")
+  created_at DateTime @default(now())
 }

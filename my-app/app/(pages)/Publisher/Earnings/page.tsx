@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useEffect } from 'react';
-import { BarChart3, ArrowDownRight, DollarSign, Download, TrendingUp, Pencil, Wallet, Clock, Hash, AlertCircle, X } from 'lucide-react';
+import { BarChart3, ArrowDownRight, DollarSign, Download, TrendingUp, Pencil, Wallet, Clock, Hash, AlertCircle, X, ArrowDownToLine } from 'lucide-react';
 import Sidebar from '../sidebar/sidebar';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useSession } from "next-auth/react";
@@ -117,67 +117,76 @@ function ToastContainer({ toasts, onDismiss }: { toasts: Toast[]; onDismiss: (id
     );
 }
 
-const WithdrawModal = ({ accent }: { accent: string }) => {
-    const r = parseInt(accent.slice(1, 3), 16);
-    const g = parseInt(accent.slice(3, 5), 16);
-    const b = parseInt(accent.slice(5, 7), 16);
-    const accentRgba = (op: number) => `rgba(${r},${g},${b},${op})`;
-
-    return (
+const WithdrawModal = ({ accent }: { accent: string }) => (
+    <div
+        className="fixed inset-0 z-50 flex items-center justify-center"
+        style={{ background: 'rgba(0,0,0,0.82)', backdropFilter: 'blur(8px)' }}
+    >
         <div
-            className="fixed inset-0 z-50 flex items-center justify-center"
-            style={{ background: 'rgba(0,0,0,0.75)', backdropFilter: 'blur(6px)' }}
+            className="flex flex-col items-center w-[340px] rounded-2xl px-8 py-10"
+            style={{ background: '#111111', border: '1px solid rgba(255,255,255,0.08)' }}
         >
-            <div
-                className="relative flex flex-col items-center gap-6 px-12 py-10 rounded-2xl bg-[#111111]"
-                style={{
-                    border: `1px solid ${accentRgba(0.25)}`,
-                    boxShadow: `0 0 60px ${accentRgba(0.15)}`,
-                }}
-            >
-                <div
-                    className="w-12 h-12 rounded-full"
-                    style={{
-                        border: `3px solid ${accentRgba(0.15)}`,
-                        borderTopColor: accent,
-                        animation: 'spin 0.9s linear infinite',
-                    }}
-                />
-                <div className="text-center">
-                    <p className="text-white font-mono font-semibold text-base tracking-wide mb-1">
-                        Processing Withdrawal
-                    </p>
-                    <p className="text-gray-500 font-mono text-xs tracking-widest">
-                        Do not refresh the page
-                    </p>
-                </div>
-                <div className="flex gap-1.5">
-                    {[0, 1, 2].map(i => (
-                        <div
-                            key={i}
-                            className="w-1.5 h-1.5 rounded-full"
-                            style={{
-                                background: accent,
-                                opacity: 0.8,
-                                animation: `pulse-dot 1.2s ease-in-out ${i * 0.2}s infinite`,
-                            }}
-                        />
-                    ))}
+            <div className="relative w-14 h-14 mb-7">
+                <svg width="56" height="56" viewBox="0 0 56 56" className="absolute inset-0">
+                    <circle cx="28" cy="28" r="24" fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth="2" />
+                    <circle
+                        cx="28" cy="28" r="24" fill="none"
+                        stroke={accent} strokeWidth="2"
+                        strokeDasharray="30 121" strokeLinecap="round"
+                        style={{ transformOrigin: '28px 28px', animation: 'withdraw-spin 1.4s cubic-bezier(0.4,0,0.6,1) infinite' }}
+                    />
+                </svg>
+                <div className="absolute inset-0 flex items-center justify-center">
+                    <ArrowDownToLine className="w-5 h-5" style={{ color: 'rgba(255,255,255,0.35)' }} />
                 </div>
             </div>
-            <style>{`
-                @keyframes spin {
-                    from { transform: rotate(0deg); }
-                    to { transform: rotate(360deg); }
-                }
-                @keyframes pulse-dot {
-                    0%, 100% { transform: scale(0.6); opacity: 0.3; }
-                    50% { transform: scale(1); opacity: 1; }
-                }
-            `}</style>
+
+            <p className="text-white font-mono font-medium text-sm tracking-tight mb-1.5">
+                Processing withdrawal
+            </p>
+            <p className="font-mono text-xs mb-8" style={{ color: 'rgba(255,255,255,0.3)', letterSpacing: '0.04em' }}>
+                Signing &amp; confirming on-chain
+            </p>
+
+            {/* Status card */}
+            <div
+                className="w-full rounded-xl p-4 flex flex-col gap-3 mb-6"
+                style={{ background: '#0d0d0d', border: '1px solid rgba(255,255,255,0.05)' }}
+            >
+                <div className="flex items-center justify-between">
+                    <span className="font-mono uppercase tracking-widest" style={{ fontSize: 10, color: 'rgba(255,255,255,0.3)' }}>Status</span>
+                    <span className="font-mono flex items-center gap-1.5" style={{ fontSize: 11, color: 'rgba(255,255,255,0.6)' }}>
+                        <span
+                            className="w-1.5 h-1.5 rounded-full inline-block"
+                            style={{ background: accent, animation: 'withdraw-blink 1.2s ease-in-out infinite' }}
+                        />
+                        Awaiting confirmation
+                    </span>
+                </div>
+                <div style={{ height: 1, background: 'rgba(255,255,255,0.04)' }} />
+                <div className="flex items-center justify-between">
+                    <span className="font-mono uppercase tracking-widest" style={{ fontSize: 10, color: 'rgba(255,255,255,0.3)' }}>Network</span>
+                    <span className="font-mono" style={{ fontSize: 11, color: 'rgba(255,255,255,0.6)' }}>Solana Devnet</span>
+                </div>
+            </div>
+
+            <p className="font-mono text-center" style={{ fontSize: 11, color: 'rgba(255,255,255,0.18)', letterSpacing: '0.02em' }}>
+                Do not close or refresh this page
+            </p>
         </div>
-    );
-};
+
+        <style>{`
+            @keyframes withdraw-spin {
+                from { transform: rotate(0deg); }
+                to   { transform: rotate(360deg); }
+            }
+            @keyframes withdraw-blink {
+                0%, 100% { opacity: 0.3; }
+                50%       { opacity: 1; }
+            }
+        `}</style>
+    </div>
+);
 
 const Earnings = () => {
     const { status } = useSession();
