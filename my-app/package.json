@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@coral-xyz/anchor": "^0.32.1",
+    "@prisma/adapter-libsql": "^7.8.0",
     "@prisma/adapter-pg": "^7.2.0",
     "@prisma/client": "^7.2.0",
     "@solana/wallet-adapter-base": "^0.9.27",
@@ -27,6 +28,7 @@
     "client-s3": "github:aws-sdk/client-s3",
     "dotenv": "^17.2.3",
     "i": "^0.3.7",
+    "ioredis": "^5.11.1",
     "lucide-react": "^0.561.0",
     "next": "16.0.10",
     "next-auth": "^5.0.0-beta.30",
@@ -44,6 +46,7 @@
     "@types/pg": "^8.16.0",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "baseline-browser-mapping": "^2.10.34",
     "eslint": "^9",
     "eslint-config-next": "16.0.10",
     "prisma": "^7.2.0",

@@ -592,14 +592,16 @@ const Dashboard = () => {
                         </div>
                     )}
                     <LineChart color={accent} dailySpend={data?.dailySpend ?? []} />
+                    
                     <div className="bg-[#0d0d0d] border border-[#1c1c1c] rounded-2xl shadow-[0_8px_32px_rgba(0,0,0,0.5)]">
                         <div className="px-5 py-4 border-b border-[#1a1a1a] flex items-center justify-between">
                             <div>
+                                
                                 <h2 className="text-sm font-semibold text-white">All Campaigns</h2>
                                 <p className="text-xs text-gray-600 mt-0.5">Detailed stats</p>
                             </div>
                             <button onClick={() => router.push('/campaigns')}
-                                className="text-xs text-gray-500 hover:text-gray-300 transition-colors">
+                                className="text-xs cursor-pointer text-gray-500 hover:text-gray-300 transition-colors">
                                 View all →
                             </button>
                         </div>

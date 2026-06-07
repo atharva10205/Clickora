@@ -12,156 +12,175 @@ export default function RoleSelection() {
         {
             id: "advertiser",
             title: "Advertiser",
-            description: "Create ads, set budgets, and track performance with real-time analytics",
+            description: "Create ads, set budgets, and track performance with real-time analytics.",
             icon: Target,
-            gradient: "from-[#00FFA3] to-[#DC1FFF]",
-            route: "/home"
+            tag: "LAUNCH ADS",
         },
         {
             id: "publisher",
             title: "Publisher",
-            description: "Show ads on your website and earn revenue from genuine engagement",
+            description: "Show ads on your website and earn revenue from genuine engagement.",
             icon: TrendingUp,
-            gradient: "from-[#DC1FFF] to-[#00FFA3]",
-            route: "/home"
-        }
+            tag: "EARN REVENUE",
+        },
     ];
 
     const handleRoleSelect = async (role: string) => {
         setLoading(true);
         const res = await fetch("/api/crud/role_update", {
             method: "POST",
-            headers: {
-                "Content-Type": "application/json"
-            },
+            headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ role }),
-        })
+        });
 
         if (!res.ok) {
-            setLoading(false)
-            return
+            setLoading(false);
+            return;
         }
 
-        router.push(
-            role === "advertiser"
-                ? "/Advertiser/Dashboard"
-                : "/Publisher/Dashboard"
-        );
+        router.push(role === "advertiser" ? "/Advertiser/Dashboard" : "/Publisher/Dashboard");
     };
 
     return (
         <>
+            {/* ── Loading overlay ── */}
             {loading && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-gradient-to-br from-[#0a0a0a] via-[#0b0b0b] to-[#0d0d0d] backdrop-blur-sm">
-                    <div className="flex flex-col items-center gap-4 bg-gradient-to-br from-[#121212] to-[#0f0f0f] border border-gray-800/50 rounded-2xl p-8">
-                        <div className="w-12 h-12 border-4 border-gray-800 border-t-[#00FFA3] rounded-full animate-spin" />
-                        <p className="text-gray-200 text-base font-medium">Setting up your account…</p>
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#0a0a0a]">
+                    <div className="flex flex-col items-center gap-4 bg-[#0d0d0d] border border-[#1c1c1c] rounded-2xl p-8 shadow-[0_4px_24px_rgba(0,0,0,0.5)]">
+                        <div className="w-10 h-10 border-2 border-[#1e1e1e] border-t-white rounded-full animate-spin" />
+                        <p className="text-xs text-[#555] font-mono uppercase tracking-widest">
+                            Setting up account…
+                        </p>
                     </div>
                 </div>
             )}
-            
-            <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-[#0a0a0a] via-[#0b0b0b] to-[#0d0d0d] text-gray-200 px-4 relative overflow-hidden">
-                {/* Background decorative elements */}
-                <div className="absolute inset-0 overflow-hidden">
-                    <div className="absolute top-20 right-20 w-96 h-96 bg-gradient-to-br from-[#00FFA3]/10 to-[#DC1FFF]/10 rounded-full blur-3xl" />
-                    <div className="absolute bottom-20 left-20 w-96 h-96 bg-gradient-to-br from-[#DC1FFF]/10 to-[#00FFA3]/10 rounded-full blur-3xl" />
-                </div>
 
-                <div className="relative w-full max-w-2xl">
-                    {/* Header */}
-                    <div className="text-center mb-12">
-                        <div className="inline-flex items-center justify-center w-20 h-20 rounded-2xl bg-gradient-to-br from-[#121212] to-[#0f0f0f] border border-gray-800/50 mb-6 shadow-xl">
-                            <div className="w-16 h-16 rounded-xl bg-gradient-to-br from-[#00FFA3]/10 to-[#DC1FFF]/10 flex items-center justify-center">
-                                <span className="text-3xl">👤</span>
+            <div className="min-h-screen bg-[#0a0a0a] text-gray-200 font-mono flex flex-col">
+
+                {/* ── Header ── */}
+                <header className="flex items-center justify-between px-8 py-5 border-b border-[#1c1c1c]">
+                    <span className="text-base font-bold text-white tracking-wider">AdFlow</span>
+                    <span className="text-[10px] text-[#2a2a2a] uppercase tracking-widest">Role setup</span>
+                </header>
+
+                {/* ── Main ── */}
+                <main className="flex-1 flex items-center justify-center px-6 py-16">
+                    <div className="w-full max-w-xl">
+
+                        {/* Heading */}
+                        <div className="mb-10">
+                            <div className="inline-flex items-center gap-2 bg-[#111] border border-[#1e1e1e] text-[#444] text-[10px] px-3 py-1.5 rounded-full mb-6 uppercase tracking-widest">
+                                <span className="w-1.5 h-1.5 rounded-full bg-white inline-block" />
+                                Step 1 of 1
                             </div>
+                            <h1 className="text-3xl font-bold text-white leading-tight mb-3">
+                                Choose your role.
+                            </h1>
+                            <p className="text-xs text-[#3a3a3a] leading-relaxed">
+                                Select how you want to use the platform. You can switch roles later in account settings.
+                            </p>
                         </div>
-                        <h1 className="text-4xl md:text-5xl font-bold mb-4">
-                            <span className="bg-gradient-to-r from-white to-gray-400 bg-clip-text text-transparent">
-                                Choose Your
-                            </span>
-                            <br />
-                            <span className="bg-gradient-to-r from-[#00FFA3] to-[#DC1FFF] bg-clip-text text-transparent">
-                                Role
-                            </span>
-                        </h1>
-                        <p className="text-gray-500 text-lg max-w-md mx-auto">
-                            Select how you want to use our advertising platform
-                        </p>
-                    </div>
 
-                    {/* Role Cards */}
-                    <div className="space-y-6">
-                        {roles.map((role, idx) => {
-                            const Icon = role.icon;
-                            return (
-                                <button
-                                    key={role.id}
-                                    onClick={() => handleRoleSelect(role.id)}
-                                    onMouseEnter={() => setHoveredCard(role.id)}
-                                    onMouseLeave={() => setHoveredCard(null)}
-                                    className="group cursor-pointer w-full cursor-pointer relative overflow-hidden rounded-2xl transition-all duration-300 hover:scale-[1.02] hover:-translate-y-1 active:scale-[0.99] focus:outline-none"
-                                    style={{ animationDelay: `${idx * 100}ms` }}
-                                >
-                                    <div className={`absolute inset-0 bg-gradient-to-r ${role.gradient} opacity-0 group-hover:opacity-5 blur-xl transition-opacity duration-300`} />
+                        {/* Role cards */}
+                        <div className="space-y-3">
+                            {roles.map((role) => {
+                                const Icon = role.icon;
+                                const isHovered = hoveredCard === role.id;
 
-                                    <div className={`relative rounded-2xl border ${
-                                        hoveredCard === role.id
-                                            ? 'border-gray-700 bg-gradient-to-br from-[#121212] to-[#0f0f0f] shadow-2xl shadow-[#00FFA3]/10'
-                                            : 'border-gray-800/50 bg-gradient-to-br from-[#121212] to-[#0f0f0f]'
-                                    } p-8 transition-all duration-300`}>
-                                        
-                                        <div className="flex items-start gap-6">
-                                            <div className={`flex-shrink-0 p-4 rounded-xl bg-gradient-to-br ${
-                                                hoveredCard === role.id 
-                                                    ? 'from-[#00FFA3]/20 to-[#DC1FFF]/20' 
-                                                    : 'from-[#00FFA3]/10 to-[#DC1FFF]/10'
-                                            } transform transition-all duration-300 ${
-                                                hoveredCard === role.id ? 'scale-110 rotate-3' : ''
-                                            }`}>
-                                                <Icon className={`w-8 h-8 ${
-                                                    role.id === 'advertiser' ? 'text-[#00FFA3]' : 'text-[#DC1FFF]'
-                                                }`} />
-                                            </div>
+                                return (
+                                    <button
+                                        key={role.id}
+                                        onClick={() => handleRoleSelect(role.id)}
+                                        onMouseEnter={() => setHoveredCard(role.id)}
+                                        onMouseLeave={() => setHoveredCard(null)}
+                                        className="w-full text-left cursor-pointer focus:outline-none group"
+                                    >
+                                        <div
+                                            className="relative bg-[#0d0d0d] rounded-2xl shadow-[0_4px_24px_rgba(0,0,0,0.5)] transition-all duration-200"
+                                            style={{
+                                                border: isHovered ? '1px solid #2e2e2e' : '1px solid #1c1c1c',
+                                            }}
+                                        >
+                                            {/* Active indicator bar */}
+                                            <div
+                                                className="absolute left-0 top-4 bottom-4 w-px rounded-full transition-all duration-200"
+                                                style={{ background: isHovered ? '#fff' : '#1a1a1a' }}
+                                            />
 
-                                            <div className="flex-1 text-left">
-                                                <div className="flex items-center justify-between mb-3">
-                                                    <h3 className="text-2xl font-bold bg-gradient-to-r from-white to-gray-400 bg-clip-text text-transparent">
-                                                        {role.title}
-                                                    </h3>
-                                                    <svg
-                                                        className={`w-6 h-6 text-[#00FFA3] transition-all duration-300 ${
-                                                            hoveredCard === role.id ? 'translate-x-2 opacity-100' : 'opacity-0'
-                                                        }`}
-                                                        fill="none"
-                                                        stroke="currentColor"
-                                                        viewBox="0 0 24 24"
-                                                    >
-                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                                            <div className="flex items-start gap-5 px-6 py-6">
+                                                {/* Icon */}
+                                                <div
+                                                    className="flex-shrink-0 w-9 h-9 flex items-center justify-center rounded-xl border transition-all duration-200"
+                                                    style={{
+                                                        background: isHovered ? '#161616' : '#111',
+                                                        borderColor: isHovered ? '#333' : '#1e1e1e',
+                                                    }}
+                                                >
+                                                    <Icon className="w-4 h-4 text-[#666]" />
+                                                </div>
+
+                                                {/* Text */}
+                                                <div className="flex-1 min-w-0">
+                                                    <div className="flex items-center justify-between mb-1.5">
+                                                        <span className="text-sm font-semibold text-white">
+                                                            {role.title}
+                                                        </span>
+                                                        <span
+                                                            className="text-[9px] uppercase tracking-widest transition-colors duration-200"
+                                                            style={{ color: isHovered ? '#555' : '#222' }}
+                                                        >
+                                                            {role.tag}
+                                                        </span>
+                                                    </div>
+                                                    <p className="text-[11px] text-[#333] leading-relaxed">
+                                                        {role.description}
+                                                    </p>
+                                                </div>
+
+                                                {/* Arrow */}
+                                                <div
+                                                    className="flex-shrink-0 self-center transition-all duration-200"
+                                                    style={{
+                                                        opacity: isHovered ? 1 : 0,
+                                                        transform: isHovered ? 'translateX(0)' : 'translateX(-4px)',
+                                                    }}
+                                                >
+                                                    <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M13 7l5 5m0 0l-5 5m5-5H6" />
                                                     </svg>
                                                 </div>
-                                                <p className="text-gray-400 text-base leading-relaxed">
-                                                    {role.description}
-                                                </p>
+                                            </div>
+
+                                            {/* Bottom progress bar */}
+                                            <div className="absolute bottom-0 left-0 right-0 h-px overflow-hidden rounded-b-2xl">
+                                                <div
+                                                    className="h-full bg-white transition-all duration-300 origin-left"
+                                                    style={{ transform: isHovered ? 'scaleX(1)' : 'scaleX(0)' }}
+                                                />
                                             </div>
                                         </div>
+                                    </button>
+                                );
+                            })}
+                        </div>
 
-                                        <div className={`absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r ${role.gradient} rounded-b-2xl transform origin-left transition-transform duration-300 ${
-                                            hoveredCard === role.id ? 'scale-x-100' : 'scale-x-0'
-                                        }`} />
-                                        
-                                        <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-[#00FFA3]/5 to-[#DC1FFF]/5 rounded-full blur-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                                    </div>
-                                </button>
-                            );
-                        })}
+                        {/* Footer note */}
+                        <p className="text-center text-[10px] text-[#2a2a2a] mt-8 uppercase tracking-widest">
+                            You can switch roles later in account settings
+                        </p>
                     </div>
+                </main>
 
-                    <p className="text-center text-gray-600 text-sm mt-10">
-                        <span className="inline-block px-4 py-2 rounded-full bg-gradient-to-r from-[#121212] to-[#0f0f0f] border border-gray-800/50">
-                            You can switch roles later in your account settings
-                        </span>
-                    </p>
-                </div>
+                {/* ── Footer ── */}
+                <footer className="border-t border-[#141414] px-8 py-5 flex items-center justify-between">
+                    <span className="text-[10px] text-[#2a2a2a]">© 2025 AdFlow · Built on Solana</span>
+                    <div className="flex gap-5">
+                        {['Privacy', 'Terms', 'Docs'].map(l => (
+                            <span key={l} className="text-[10px] text-[#2a2a2a] hover:text-[#555] cursor-pointer transition-colors">{l}</span>
+                        ))}
+                    </div>
+                </footer>
+
             </div>
         </>
     );

@@ -25,7 +25,6 @@ const Sidebar = ({ activeTab, SidebarAccent }: SidebarProps) => {
       try {
         const res = await fetch('/api/crud/Advertiser/Sidebar');
         const result = await res.json();
-        console.log("result sidebar ", result)
         setSidebarData(result.data);
       } catch (err) {
         console.error('Sidebar fetch error:', err);

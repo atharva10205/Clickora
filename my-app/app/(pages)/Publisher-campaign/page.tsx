@@ -15,6 +15,8 @@ export default function WebsiteRegistrationForm() {
     const [errors, setErrors] = useState({});
     const [loading, setLoading] = useState(false);
     const [hasExistingWallet, setHasExistingWallet] = useState(false);
+    const [userName, setUserName] = useState("");
+    const [userImage, setUserImage] = useState("");
 
     const router = useRouter();
 
@@ -26,7 +28,6 @@ export default function WebsiteRegistrationForm() {
         const b = parseInt(accent.slice(5, 7), 16);
         return `rgba(${r},${g},${b},${op})`;
     };
-
     useEffect(() => {
         const get_wallet_address = async () => {
             const res = await fetch("/api/crud/Publisher-campaign");
@@ -36,6 +37,8 @@ export default function WebsiteRegistrationForm() {
                 setHasExistingWallet(true);
             }
             setAccent(data.accent ?? '#ffffff');
+            setUserName(data.user?.name ?? "");
+            setUserImage(data.user?.image ?? "");
         };
         get_wallet_address();
     }, []);
@@ -114,7 +117,6 @@ export default function WebsiteRegistrationForm() {
 
     return (
         <>
-            {/* Loading overlay */}
             {loading && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm">
                     <div className="flex flex-col items-center gap-4">
@@ -126,17 +128,34 @@ export default function WebsiteRegistrationForm() {
 
             <div className="min-h-screen bg-[#0a0a0a] text-gray-300">
 
-                {/* Header */}
                 <header className="bg-[#0c0c0c] border-b border-[#1f1f1f]">
                     <div className="max-w-4xl mx-auto px-6">
                         <div className="flex items-center justify-between h-14">
                             <div className="flex items-center gap-3">
+                                <button
+                                    onClick={() => router.back()}
+                                    className="w-7 h-7 rounded-md bg-[#1a1a1a] border border-[#2a2a2a] flex items-center justify-center hover:border-gray-600 hover:text-gray-300 text-gray-500 transition-all duration-150"
+                                >
+                                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7" />
+                                    </svg>
+                                </button>
+                                <span className="text-gray-700">|</span>
                                 <span className="text-white font-semibold text-sm tracking-tight">Publisher Campaign</span>
                                 <span className="text-gray-700">|</span>
                                 <span className="text-gray-500 text-sm">Register Your Website</span>
                             </div>
-                            <div className="w-7 h-7 rounded-md bg-[#1a1a1a] border border-[#2a2a2a] flex items-center justify-center">
-                                <User className="w-4 h-4 text-gray-500" />
+                            <div className="flex items-center gap-2">
+                                {userName && (
+                                    <span className="text-xs text-gray-500 font-mono hidden sm:block">{userName}</span>
+                                )}
+                                <div className="w-7 h-7 rounded-md bg-[#1a1a1a] border border-[#2a2a2a] overflow-hidden flex items-center justify-center">
+                                    {userImage ? (
+                                        <img src={userImage} alt={userName} className="w-full h-full object-cover" />
+                                    ) : (
+                                        <User className="w-4 h-4 text-gray-500" />
+                                    )}
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -145,7 +164,6 @@ export default function WebsiteRegistrationForm() {
                 <main className="max-w-4xl mx-auto px-6 py-8">
                     <div className="bg-[#111111] border border-gray-800/70 rounded-xl overflow-hidden">
 
-                        {/* Form header */}
                         <div className="px-8 py-6 border-b border-gray-800/60">
                             <p className="text-xs text-gray-600 uppercase tracking-widest font-mono mb-2">Website Details</p>
                             <h1 className="text-xl font-semibold text-white tracking-tight mb-1">Register your website to start earning</h1>
@@ -154,7 +172,6 @@ export default function WebsiteRegistrationForm() {
 
                         <div className="p-8 space-y-8">
 
-                            {/* Website Name */}
                             <div>
                                 <label className="text-xs text-gray-600 uppercase tracking-widest mb-2 block">Website Name</label>
                                 <div className="relative">
@@ -172,7 +189,6 @@ export default function WebsiteRegistrationForm() {
                                 {errors.websiteName && <p className="mt-1.5 text-xs text-red-400 font-mono">{errors.websiteName}</p>}
                             </div>
 
-                            {/* Website URL */}
                             <div>
                                 <label className="text-xs text-gray-600 uppercase tracking-widest mb-2 block">Website URL / Domain</label>
                                 <div className="relative">
@@ -190,7 +206,6 @@ export default function WebsiteRegistrationForm() {
                                 {errors.websiteURL && <p className="mt-1.5 text-xs text-red-400 font-mono">{errors.websiteURL}</p>}
                             </div>
 
-                            {/* Wallet Address */}
                             <div>
                                 <label className="text-xs text-gray-600 uppercase tracking-widest mb-2 block">Wallet Address</label>
                                 <p className="text-xs text-gray-600 mb-2">Your public wallet address to receive payments</p>

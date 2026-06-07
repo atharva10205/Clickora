@@ -98,9 +98,7 @@ pub mod my_project {
         Ok(())
     }
 
-    pub fn claim(ctx: Context<Claim>) -> Result<()> {
-        let earnings = &ctx.accounts.earnings;
-        let claimable_amount = earnings.claimable_amount;
+    pub fn claim(ctx: Context<Claim>,claimable_amount:u64 ) -> Result<()> {
 
         require!(claimable_amount > 0, AdError::InvalidAmount);
 
@@ -125,7 +123,6 @@ pub mod my_project {
             signer_seeds,
         )?;
 
-        ctx.accounts.earnings.claimable_amount = 0;
         Ok(())
     }
 
@@ -211,14 +208,6 @@ pub struct Claim<'info> {
     )]
     /// CHECK: vault PDA, seeds and bump are verified by the constraint above
     pub vault: AccountInfo<'info>,
-
-    #[account(
-        mut,
-        seeds = [b"earnings", ad.key().as_ref(), publisher.key().as_ref()],
-        bump,
-        has_one = publisher
-    )]
-    pub earnings: Account<'info, EarningsRecord>,
 
     #[account(
         seeds = [b"ad", advertiser.key().as_ref(), ad.ad_id.as_ref()],

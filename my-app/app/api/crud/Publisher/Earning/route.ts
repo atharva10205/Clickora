@@ -41,7 +41,7 @@ export async function GET(req: Request) {
         return NextResponse.json({ error: "No websites found" }, { status: 404 });
     }
 
-    
+
     const data = await prisma.click.findMany({
         where: {
             publisher_url: { in: websiteUrlMap },
@@ -65,17 +65,28 @@ export async function GET(req: Request) {
         select: { id: true, wallet_address: true }
     });
     const walletMap = new Map(publisherWallets.map(p => [p.id, p.wallet_address]));
+    const groupedEarnings = new Map<string, {
+        ad: string;
+        publisher: string | null;
+        advertiser: string | null;
+        claimable_amount: number;
+    }>();
 
-    const earningsRecords = data.map(click => {
+    for (const click of data) {
         const cpc = cpcMap1.get(click.ad_id) ?? 0;
-        const claimable_amount = Math.round(cpc * 1_000_000_000);
-        return {
-            publisher: walletMap.get(click.publisher_id) ?? null,
-            ad: click.ad_id,
-            claimable_amount,
-            advertiser: advertiserWalletMap.get(click.ad_id) ?? null,
-        };
-    });
+        const lamports = Math.round(cpc * 1_000_000_000);
+        if (!groupedEarnings.has(click.ad_id)) {
+            groupedEarnings.set(click.ad_id, {
+                ad: click.ad_id,
+                publisher: walletMap.get(click.publisher_id) ?? null,
+                advertiser: advertiserWalletMap.get(click.ad_id) ?? null,
+                claimable_amount: 0,
+            });
+        }
+        groupedEarnings.get(click.ad_id)!.claimable_amount += lamports;
+    }
+
+    const earningsRecords = [...groupedEarnings.values()];
 
     const history = await prisma.click.findMany({
         where: {
@@ -188,7 +199,7 @@ export async function POST(req: Request) {
         where: {
             publisher_url: { in: websiteUrlMap },
             claimed: false,
-            processed: false  
+            processed: false
         },
         select: { id: true, ad_id: true, publisher_id: true },
     });
@@ -374,14 +385,13 @@ export async function PATCH(req: Request) {
     if (publisherWebsiteUrls.length === 0) {
         return NextResponse.json({ error: "No matching publisher found" }, { status: 404 });
     }
-
     await prisma.click.updateMany({
         where: {
             ad_id: { in: adIds },
             publisher_url: { in: publisherWebsiteUrls },
             claimed: false,
         },
-        data: { claimed: true, claimed_at: new Date() }
+        data: { claimed: true, claimed_at: new Date(), processed: false }
     });
 
     return NextResponse.json({ success: true });

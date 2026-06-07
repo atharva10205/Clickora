@@ -48,35 +48,6 @@ export const IDL = {
           }
         },
         {
-          "name": "earnings",
-          "writable": true,
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "value": [
-                  101,
-                  97,
-                  114,
-                  110,
-                  105,
-                  110,
-                  103,
-                  115
-                ]
-              },
-              {
-                "kind": "account",
-                "path": "ad"
-              },
-              {
-                "kind": "account",
-                "path": "publisher"
-              }
-            ]
-          }
-        },
-        {
           "name": "ad",
           "pda": {
             "seeds": [
@@ -105,17 +76,19 @@ export const IDL = {
         {
           "name": "publisher",
           "writable": true,
-          "signer": true,
-          "relations": [
-            "earnings"
-          ]
+          "signer": true
         },
         {
           "name": "system_program",
           "address": "11111111111111111111111111111111"
         }
       ],
-      "args": []
+      "args": [
+        {
+          "name": "claimable_amount",
+          "type": "u64"
+        }
+      ]
     },
     {
       "name": "deposit",

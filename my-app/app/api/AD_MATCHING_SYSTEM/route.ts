@@ -7,7 +7,7 @@ const MATCH_CONFIG = {
         keyword_match: 40,
         cost_per_click: 20
     },
-    minMatchScore: 1,
+    minMatchScore: 10,
     maxMatchscore: 100,
     Max_Ads_For_publisher: 6,
 }
@@ -63,6 +63,8 @@ async function GetEligebleAd() {
         where: whereCondition,
         select: { id: true, RemainingAmount: true, cost_per_click: true, Clicks: true }
     });
+    console.log("allAds", allAds)
+
 
     const eligible = allAds.filter(ad =>
         ad.RemainingAmount! > Number(ad.cost_per_click!) * (ad.Clicks ?? 0)
@@ -76,6 +78,7 @@ async function GetEligebleAd() {
             }
         });
     }
+
 
     const randomIds = eligible
         .sort(() => Math.random() - 0.5)
@@ -104,14 +107,15 @@ async function selectAdsForPublisher(website_url, logImpression = false) {
     try {
         const cached = await redis.get(cacheKey)
         if (cached) {
+                    console.log(`Cache Got : ${website_url}`);
 
-
+            const parsedCache = JSON.parse(cached as string);
             if (logImpression) {
-                const cachedAds = cached as any[];
+                const cachedAds = parsedCache as any[];
                 Promise.all(cachedAds.map(ad => logAdImpression(ad.id, website_url, parseFloat(ad.matchScore)))
                 ).catch(err => console.error('Error logging impressions:', err));
             }
-            return cached;
+            return parsedCache;
         }
         console.log(`Cache MISS for publisher: ${website_url}`);
     } catch (error) {
@@ -121,16 +125,13 @@ async function selectAdsForPublisher(website_url, logImpression = false) {
 
     const count = MATCH_CONFIG.Max_Ads_For_publisher;
 
-
     const publisher = await prisma.publisher.findUnique({
         where: { website_url: website_url }
     })
 
-
-    if (!publisher || publisher.status !== "ACTIVE") return [];
+    if (!publisher) return [];
 
     const ads = await GetEligebleAd();
-    console.log("ads", ads)
 
     const adsWithScore = ads.map(ad => ({
         ...ad,
@@ -141,6 +142,8 @@ async function selectAdsForPublisher(website_url, logImpression = false) {
     const filteredAds = adsWithScore.filter(ad => ad.matchScore >= MATCH_CONFIG.minMatchScore);
     const sortedAds = filteredAds.sort((a, b) => b.matchScore - a.matchScore);
     const scoredAds = sortedAds.slice(0, count);
+
+    console.log("secoread", scoredAds)
 
 
     if (scoredAds.length === 0) {
@@ -182,7 +185,7 @@ async function selectAdsForPublisher(website_url, logImpression = false) {
 
     try {
 
-        await redis.setex(cacheKey, CACHE_TTL, result);
+        await redis.setex(cacheKey, CACHE_TTL, JSON.stringify(result));
 
     } catch (error) {
         console.log("error", error)

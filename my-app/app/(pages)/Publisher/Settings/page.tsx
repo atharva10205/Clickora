@@ -3,25 +3,25 @@
 import { Copy, User, RefreshCw, Target, TrendingUp, Wallet, Palette, Check, Trash2, X, AlertTriangle } from 'lucide-react';
 import Sidebar from '../sidebar/sidebar';
 import { useEffect, useState } from 'react';
-import { useSession } from 'next-auth/react';
+import { useSession, signOut } from 'next-auth/react';
 
 const alpha = (op: number) => `rgba(255,255,255,${op})`;
 
 const PALETTE = [
-  '#FFFFFF', '#5B9BD5', '#E07B54', '#9B59B6', '#27AE60', '#E74C3C',
-  '#F39C12', '#16A085', '#2C3E50', '#C0392B', '#8E44AD', '#1ABC9C',
-  '#3498DB', '#2ECC71', '#E67E22', '#34495E', '#FFD166', '#06D6A0',
-  '#118AB2', '#EF476F', '#8338EC', '#FF9F1C'
+    '#FFFFFF', '#5B9BD5', '#E07B54', '#9B59B6', '#27AE60', '#E74C3C',
+    '#F39C12', '#16A085', '#2C3E50', '#C0392B', '#8E44AD', '#1ABC9C',
+    '#3498DB', '#2ECC71', '#E67E22', '#34495E', '#FFD166', '#06D6A0',
+    '#118AB2', '#EF476F', '#8338EC', '#FF9F1C'
 ];
 
 const Settings = () => {
     const activeTab = 'Settings';
-    const [isSwitching, setIsSwitching]     = useState(false);
-    const [userName, setUserName]           = useState("");
-    const [userEmail, setUserEmail]         = useState("");
-    const [accent, setAccent]               = useState('#FFFFFF');
-    const [savingAccent, setSavingAccent]   = useState(false);
-    const [accentSaved, setAccentSaved]     = useState(false);
+    const [isSwitching, setIsSwitching] = useState(false);
+    const [userName, setUserName] = useState("");
+    const [userEmail, setUserEmail] = useState("");
+    const [accent, setAccent] = useState('#FFFFFF');
+    const [savingAccent, setSavingAccent] = useState(false);
+    const [accentSaved, setAccentSaved] = useState(false);
     const [showDeleteModal, setShowDeleteModal] = useState(false);
     const [deleteEmailInput, setDeleteEmailInput] = useState("");
     const ACCENT = accent;
@@ -44,7 +44,7 @@ const Settings = () => {
 
     useEffect(() => {
         const get_user_data = async () => {
-            const res  = await fetch("/api/crud/Publisher/Settings");
+            const res = await fetch("/api/crud/Publisher/Settings");
             const data = await res.json();
             if (data?.res) {
                 setUserName(data.res.name ?? "");
@@ -59,7 +59,7 @@ const Settings = () => {
     }, []);
 
     const handleSaveProfile = async () => {
-        const res  = await fetch("/api/crud/Publisher/Settings", {
+        const res = await fetch("/api/crud/Publisher/Settings", {
             method: "POST",
             body: JSON.stringify({ name: userName, email: userEmail }),
         });
@@ -88,7 +88,7 @@ const Settings = () => {
     };
 
     const handleSaveWallet = async () => {
-        const res  = await fetch("/api/crud/Publisher/Settings", {
+        const res = await fetch("/api/crud/Publisher/Settings", {
             method: "PATCH",
             body: JSON.stringify({ wallet_address: WalletAddress }),
         });
@@ -126,13 +126,13 @@ const Settings = () => {
             style={{ border: `1px solid ${alpha(0.18)}` }}
             onMouseEnter={e => {
                 e.currentTarget.style.borderColor = ACCENT;
-                e.currentTarget.style.boxShadow   = `0 0 18px ${hAlpha(0.2)}`;
-                e.currentTarget.style.color        = '#ffffff';
+                e.currentTarget.style.boxShadow = `0 0 18px ${hAlpha(0.2)}`;
+                e.currentTarget.style.color = '#ffffff';
             }}
             onMouseLeave={e => {
                 e.currentTarget.style.borderColor = alpha(0.18);
-                e.currentTarget.style.boxShadow   = 'none';
-                e.currentTarget.style.color        = '';
+                e.currentTarget.style.boxShadow = 'none';
+                e.currentTarget.style.color = '';
             }}
         >
             {label}
@@ -143,7 +143,7 @@ const Settings = () => {
 
     return (
         <div className="flex h-screen bg-[#0a0a0a] text-gray-300">
-            <Sidebar activeTab={activeTab} accent={accent}/>
+            <Sidebar activeTab={activeTab} accent={accent} />
 
             <main className="flex-1 p-8 overflow-y-auto">
                 <div className="max-w-6xl">
@@ -173,10 +173,10 @@ const Settings = () => {
                                         className="relative p-6 rounded-xl font-mono text-left transition-all duration-200 hover:-translate-y-0.5"
                                         style={{
                                             background: '#0d0d0d',
-                                            border:     `1px solid ${currentRole === 'advertiser' ? ACCENT : alpha(0.15)}`,
-                                            boxShadow:  currentRole === 'advertiser' ? `0 0 24px ${hAlpha(0.12)}` : 'none',
-                                            opacity:    isSwitching ? 0.5 : 1,
-                                            cursor:     isSwitching ? 'not-allowed' : 'pointer',
+                                            border: `1px solid ${currentRole === 'advertiser' ? ACCENT : alpha(0.15)}`,
+                                            boxShadow: currentRole === 'advertiser' ? `0 0 24px ${hAlpha(0.12)}` : 'none',
+                                            opacity: isSwitching ? 0.5 : 1,
+                                            cursor: isSwitching ? 'not-allowed' : 'pointer',
                                         }}
                                         onMouseEnter={e => { if (currentRole !== 'advertiser') (e.currentTarget as HTMLElement).style.borderColor = alpha(0.2); }}
                                         onMouseLeave={e => { if (currentRole !== 'advertiser') (e.currentTarget as HTMLElement).style.borderColor = alpha(0.08); }}
@@ -205,10 +205,10 @@ const Settings = () => {
                                         className="relative p-6 rounded-xl text-left font-mono transition-all duration-200 hover:-translate-y-0.5"
                                         style={{
                                             background: '#0d0d0d',
-                                            border:     `1px solid ${currentRole === 'publisher' ? ACCENT : alpha(0.15)}`,
-                                            boxShadow:  currentRole === 'publisher' ? `0 0 24px ${hAlpha(0.12)}` : 'none',
-                                            opacity:    isSwitching ? 0.5 : 1,
-                                            cursor:     isSwitching ? 'not-allowed' : 'pointer',
+                                            border: `1px solid ${currentRole === 'publisher' ? ACCENT : alpha(0.15)}`,
+                                            boxShadow: currentRole === 'publisher' ? `0 0 24px ${hAlpha(0.12)}` : 'none',
+                                            opacity: isSwitching ? 0.5 : 1,
+                                            cursor: isSwitching ? 'not-allowed' : 'pointer',
                                         }}
                                         onMouseEnter={e => { if (currentRole !== 'publisher') (e.currentTarget as HTMLElement).style.borderColor = alpha(0.2); }}
                                         onMouseLeave={e => { if (currentRole !== 'publisher') (e.currentTarget as HTMLElement).style.borderColor = alpha(0.08); }}
@@ -263,7 +263,7 @@ const Settings = () => {
                                         onChange={(e) => setUserName(e.target.value)}
                                         className="w-full bg-[#0d0d0d] border border-gray-800/60 rounded-lg px-4 py-3 text-sm text-gray-200 placeholder-gray-700 font-mono focus:outline-none transition-colors duration-150"
                                         onFocus={e => e.currentTarget.style.borderColor = ACCENT}
-                                        onBlur={e  => e.currentTarget.style.borderColor = 'rgba(255,255,255,0.08)'}
+                                        onBlur={e => e.currentTarget.style.borderColor = 'rgba(255,255,255,0.08)'}
                                     />
                                 </div>
                                 <div>
@@ -274,7 +274,7 @@ const Settings = () => {
                                         onChange={(e) => setUserEmail(e.target.value)}
                                         className="w-full bg-[#0d0d0d] border border-gray-800/60 rounded-lg px-4 py-3 text-sm text-gray-200 placeholder-gray-700 font-mono focus:outline-none transition-colors duration-150"
                                         onFocus={e => e.currentTarget.style.borderColor = ACCENT}
-                                        onBlur={e  => e.currentTarget.style.borderColor = 'rgba(255,255,255,0.08)'}
+                                        onBlur={e => e.currentTarget.style.borderColor = 'rgba(255,255,255,0.08)'}
                                     />
                                 </div>
                                 <SaveBtn onClick={handleSaveProfile} label="Save Changes" />
@@ -298,7 +298,7 @@ const Settings = () => {
                                             onChange={(e) => setWalletAddress(e.target.value)}
                                             className="flex-1 bg-[#0d0d0d] border border-gray-800/60 rounded-lg px-4 py-3 font-mono text-sm text-gray-200 placeholder-gray-700 focus:outline-none transition-colors duration-150"
                                             onFocus={e => e.currentTarget.style.borderColor = ACCENT}
-                                            onBlur={e  => e.currentTarget.style.borderColor = 'rgba(255,255,255,0.08)'}
+                                            onBlur={e => e.currentTarget.style.borderColor = 'rgba(255,255,255,0.08)'}
                                         />
                                         <button
                                             className="px-4 rounded-lg bg-[#161616] border border-gray-800/60 text-gray-500 hover:text-gray-200 hover:border-gray-600 transition-all duration-150"
@@ -348,11 +348,11 @@ const Settings = () => {
                                                 <div
                                                     className="w-9 h-9 rounded-md relative transition-all duration-150"
                                                     style={{
-                                                        background:    color,
-                                                        outline:       isSelected ? `2px solid ${color}` : '2px solid transparent',
+                                                        background: color,
+                                                        outline: isSelected ? `2px solid ${color}` : '2px solid transparent',
                                                         outlineOffset: '3px',
-                                                        transform:     isSelected ? 'scale(1.1)' : 'scale(1)',
-                                                        boxShadow:     isSelected ? `0 0 14px ${color}55` : 'none',
+                                                        transform: isSelected ? 'scale(1.1)' : 'scale(1)',
+                                                        boxShadow: isSelected ? `0 0 14px ${color}55` : 'none',
                                                     }}
                                                 >
                                                     {isSelected && (
@@ -371,16 +371,33 @@ const Settings = () => {
                             </div>
                         </div>
 
-                        <div className="bg-[#111111] border border-red-900/30 rounded-xl overflow-hidden">
-                            <div className="px-6 py-5 border-b border-red-900/20 flex items-center gap-3">
-                                <div className="p-2 rounded-lg bg-red-950/40 border border-red-900/30">
-                                    <AlertTriangle className="w-4 h-4 text-red-500" />
-                                </div>
+                        <div className="bg-[#111111] border border-gray-800/70 rounded-xl overflow-hidden">
+                            <div className="p-6 flex items-center justify-between">
                                 <div>
-                                    <h2 className="text-sm font-semibold text-red-400 uppercase tracking-widest">Danger Zone</h2>
-                                    <p className="text-xs text-gray-600 mt-0.5">Irreversible actions — proceed with caution</p>
+                                    <p className="text-sm text-gray-300 font-medium">Sign Out</p>
+                                    <p className="text-xs text-gray-600 mt-0.5">Sign out of your account on this device</p>
                                 </div>
+                                <button
+                                    onClick={() => signOut({ callbackUrl: '/' })}
+                                    className="flex cursor-pointer items-center gap-2 px-4 py-2.5 rounded-lg bg-[#161616] border border-gray-800/60 text-gray-300 text-sm font-semibold hover:border-gray-600 hover:text-white transition-all duration-150"
+                                >
+                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                                    </svg>
+                                    Sign Out
+                                </button>
                             </div>
+                        </div>
+
+                        <div className="bg-[#111111] border border-red-900/30 rounded-xl overflow-hidden">                            <div className="px-6 py-5 border-b border-red-900/20 flex items-center gap-3">
+                            <div className="p-2 rounded-lg bg-red-950/40 border border-red-900/30">
+                                <AlertTriangle className="w-4 h-4 text-red-500" />
+                            </div>
+                            <div>
+                                <h2 className="text-sm font-semibold text-red-400 uppercase tracking-widest">Danger Zone</h2>
+                                <p className="text-xs text-gray-600 mt-0.5">Irreversible actions — proceed with caution</p>
+                            </div>
+                        </div>
                             <div className="p-6 flex items-center justify-between">
                                 <div>
                                     <p className="text-sm text-gray-300 font-medium">Delete Account</p>
@@ -440,8 +457,8 @@ const Settings = () => {
                                 onChange={(e) => setDeleteEmailInput(e.target.value)}
                                 placeholder={userEmail}
                                 className="w-full bg-[#0d0d0d] border border-gray-800/60 rounded-lg px-4 py-3 text-sm text-gray-200 placeholder-gray-700 font-mono focus:outline-none transition-colors duration-150"
-                                onFocus={e  => e.currentTarget.style.borderColor = 'rgba(239,68,68,0.5)'}
-                                onBlur={e   => e.currentTarget.style.borderColor = 'rgba(255,255,255,0.08)'}
+                                onFocus={e => e.currentTarget.style.borderColor = 'rgba(239,68,68,0.5)'}
+                                onBlur={e => e.currentTarget.style.borderColor = 'rgba(255,255,255,0.08)'}
                             />
                         </div>
 
@@ -457,10 +474,10 @@ const Settings = () => {
                                 disabled={!emailMatches}
                                 className="flex-1 px-4 py-2.5 rounded-lg text-sm font-semibold transition-all duration-150 flex items-center justify-center gap-2"
                                 style={{
-                                    background:  emailMatches ? 'rgba(127,29,29,0.6)' : 'rgba(30,30,30,1)',
-                                    border:      emailMatches ? '1px solid rgba(239,68,68,0.5)' : '1px solid rgba(255,255,255,0.06)',
-                                    color:       emailMatches ? '#f87171' : '#4b5563',
-                                    cursor:      emailMatches ? 'pointer' : 'not-allowed',
+                                    background: emailMatches ? 'rgba(127,29,29,0.6)' : 'rgba(30,30,30,1)',
+                                    border: emailMatches ? '1px solid rgba(239,68,68,0.5)' : '1px solid rgba(255,255,255,0.06)',
+                                    color: emailMatches ? '#f87171' : '#4b5563',
+                                    cursor: emailMatches ? 'pointer' : 'not-allowed',
                                 }}
                             >
                                 <Trash2 className="w-3.5 h-3.5" />

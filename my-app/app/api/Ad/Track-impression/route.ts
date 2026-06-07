@@ -17,12 +17,10 @@ let isFlushScheduled = false;
 
 async function flushImpressions() {
     if (impression_queue.size === 0) {
-        console.log('[Impression Flush] Queue is empty — skipping flush');
         isFlushScheduled = false;
         return;
     }
 
-    console.log(`[Impression Flush] Starting — ${impression_queue.size} unique keys in queue`);
 
     const to_flush = new Map(impression_queue);
     impression_queue.clear();
@@ -37,7 +35,6 @@ async function flushImpressions() {
                 return;
             }
 
-            console.log(`[Impression Flush] Processing — adId: ${adId}, publisher_url: ${publisher_url}, count: ${count}`);
 
             const publisher = await prisma.publisher.findUnique({
                 where: { website_url: publisher_url }
@@ -68,7 +65,6 @@ async function flushImpressions() {
                     },
                 });
 
-                console.log(`[Impression Flush] Upsert success — adId: ${adId}, publisher: ${publisher.id}, count: ${count}`);
             } catch (dbError) {
                 console.error(`[Impression Flush]  DB upsert FAILED — adId: ${adId}, publisher_url: ${publisher_url}, count: ${count}`, dbError);
             }
@@ -81,13 +77,11 @@ async function flushImpressions() {
         }
     });
 
-    console.log(`[Impression Flush] Done — ${results.length} entries processed`);
 }
 
 function FlushSchedule(delay = 5000) {
     if (!isFlushScheduled) {
         isFlushScheduled = true;
-        console.log(`[Impression Flush] Scheduled in ${delay}ms — queue size: ${impression_queue.size}`);
         setTimeout(() => flushImpressions(), delay);
     }
 }
@@ -109,7 +103,6 @@ export async function POST(request: Request) {
         const prev = impression_queue.get(key) || 0;
         impression_queue.set(key, prev + 1);
 
-        console.log(`[Track Impression] Queued — adId: ${adId}, publisher_url: ${publisher_url}, queue_count: ${prev + 1}`);
 
         FlushSchedule();
 

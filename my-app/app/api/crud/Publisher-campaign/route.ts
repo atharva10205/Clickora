@@ -44,12 +44,14 @@ export async function GET(req: Request) {
     }),
     prisma.user.findUnique({
         where: { email: session.user.email },
-        select: { accent: true }
+        select: { accent: true , name : true , image : true}
     })
-]);
-
-return NextResponse.json({
+]);return NextResponse.json({
     address,
-    accent: user?.accent ?? '#ffffff'
+    accent: user?.accent ?? '#ffffff',
+    user: {
+        name: user?.name ?? '',
+        image: user?.image ?? ''
+    }
 });
 }

@@ -137,7 +137,6 @@ export default function Three({ next, back, adID }) {
                 serviceFee: SERVICE_FEE, systemProgram: SystemProgram.programId,
             }).preInstructions([initIx]).rpc();
 
-            console.log("Init + Deposit tx:", tx);
 
             const res = await fetch("/api/crud/Advertiser-campaign-step-3", {
                 method: "POST",

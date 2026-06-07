@@ -6,7 +6,7 @@ import Sidebar from '../sidebar/sidebar';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useSession } from "next-auth/react";
 import { Connection, PublicKey, SystemProgram, Transaction } from '@solana/web3.js';
-import { AnchorProvider, Program } from '@coral-xyz/anchor';
+import { AnchorProvider, BN, Program } from '@coral-xyz/anchor';
 import { useWallet } from '@solana/wallet-adapter-react';
 import { IDL } from '@/lib/idl';
 import { adIdToBytes } from '@/lib/solana';
@@ -197,10 +197,10 @@ const Earnings = () => {
     const [toasts, setToasts] = React.useState<Toast[]>([]);
 
     const addToast = (message: string, type: Toast['type'] = 'error') =>
-    setToasts(prev => [...prev, { id: Date.now(), message, type }]);
+        setToasts(prev => [...prev, { id: Date.now(), message, type }]);
 
     const dismissToast = (id: number) =>
-    setToasts(prev => prev.filter(t => t.id !== id));
+        setToasts(prev => prev.filter(t => t.id !== id));
 
     useEffect(() => {
         if (!withdrawing) return;
@@ -235,124 +235,125 @@ const Earnings = () => {
 
     const Withdraw_BTN = async () => {
 
-    if (!wallet.publicKey || !wallet.signTransaction) {
-        addToast("Please connect your wallet first", "error");
-        return;
-    }
-    setWithdrawing(true);
-    try {
-        const res = await fetch("/api/crud/Publisher/Earning", { method: "POST" });
-        const data = await res.json();
+        if (!wallet.publicKey || !wallet.signTransaction) {
+            addToast("Please connect your wallet first", "error");
+            return;
+        }
+        setWithdrawing(true);
+        try {
+            const res = await fetch("/api/crud/Publisher/Earning", { method: "POST" });
+            const data = await res.json();
 
-        const postResults: { ad: string; advertiser: string }[] = data.results ?? [];
+            const postResults: { ad: string; advertiser: string, claimable_amount: number; }[] = data.results ?? [];
 
-        const connection = new Connection("https://api.devnet.solana.com", "confirmed");
-        const provider = new AnchorProvider(connection, wallet as any, {});
-        const program = new Program(IDL as any, provider);
+            const connection = new Connection("https://api.devnet.solana.com", "confirmed");
+            const provider = new AnchorProvider(connection, wallet as any, {});
+            const program = new Program(IDL as any, provider);
 
-        const transaction = new Transaction();
-        const publisherPubkey = new PublicKey(fetchquery.data?.publisher?.wallet_address!);
+            const transaction = new Transaction();
+            const publisherPubkey = new PublicKey(fetchquery.data?.publisher?.wallet_address!);
 
-        let claimSources: { ad: string; advertiser: string }[] = [];
+            let claimSources: { ad: string; advertiser: string, claimable_amount: number; }[] = [];
 
-        if (postResults.length > 0) {
-            claimSources = postResults;
-        } else {
-            const seen = new Set<string>();
-            for (const e of earningsRecords) {
-                if (!e.advertiser) continue;               
-                if (seen.has(e.ad)) continue;
-                seen.add(e.ad);
-                claimSources.push({ ad: e.ad, advertiser: e.advertiser });
+            if (postResults.length > 0) {
+                claimSources = postResults;
+            } else {
+                const adMap = new Map<string, { ad: string; advertiser: string; claimable_amount: number }>();
+                for (const e of earningsRecords) {
+                    if (!e.advertiser) continue;
+                    if (!adMap.has(e.ad)) {
+                        adMap.set(e.ad, { ad: e.ad, advertiser: e.advertiser, claimable_amount: 0 });
+                    }
+                    adMap.get(e.ad)!.claimable_amount += e.claimable_amount;
+                }
+                claimSources = [...adMap.values()];
             }
-        }
 
-        if (claimSources.length === 0) {
-            addToast("No claimable earnings found", "info");
+            if (claimSources.length === 0) {
+                addToast("No claimable earnings found", "info");
+                setWithdrawing(false);
+                return;
+            }
+
+            for (const e of claimSources) {
+                const adIdBytes = adIdToBytes(e.ad);
+                const advertiserPubkey = new PublicKey(e.advertiser);
+
+                const [adPda] = PublicKey.findProgramAddressSync(
+                    [Buffer.from("ad"), advertiserPubkey.toBuffer(), adIdBytes],
+                    program.programId
+                );
+                const [vaultPda] = PublicKey.findProgramAddressSync(
+                    [Buffer.from("vault"), advertiserPubkey.toBuffer(), adIdBytes],
+                    program.programId
+                );
+                // const [earningsPda] = PublicKey.findProgramAddressSync(
+                //     [Buffer.from("earnings"), adPda.toBuffer(), publisherPubkey.toBuffer()],
+                //     program.programId
+                // );
+
+                const ix = await program.methods.claim(new BN(e.claimable_amount)).accounts({
+                    vault: vaultPda,
+                    ad: adPda,
+                    advertiser: advertiserPubkey,
+                    publisher: publisherPubkey,
+                    systemProgram: SystemProgram.programId,
+                }).instruction();
+
+                transaction.add(ix);
+            }
+
+            if (transaction.instructions.length === 0) {
+                addToast("Nothing to claim", "info");
+                setWithdrawing(false);
+                return;
+            }
+
+            const { blockhash } = await connection.getLatestBlockhash();
+            transaction.recentBlockhash = blockhash;
+            transaction.feePayer = wallet.publicKey;
+
+            const { value: simResult } = await connection.simulateTransaction(transaction);
+            if (simResult.err) {
+                console.error("Simulation failed:", simResult.err, simResult.logs);
+                simResult.logs?.forEach(l => console.log(l));
+                addToast(`Transaction would fail: ${JSON.stringify(simResult.err)}`, "error");
+                setWithdrawing(false);
+                return;
+            }
+
+            const signed = await wallet.signTransaction(transaction);
+            const txSig = await connection.sendRawTransaction(signed.serialize());
+            const confirmation = await connection.confirmTransaction(txSig, "confirmed");
+            if (confirmation.value.err) {
+                throw new Error(`Transaction confirmed but failed: ${JSON.stringify(confirmation.value.err)}`);
+            }
+
+            const claimedAdIds = claimSources.map(r => r.ad);
+            await fetch("/api/crud/Publisher/Earning", {
+                method: "PATCH",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ adIds: claimedAdIds })
+            });
+
+            addToast("Withdrawal successful!", "success");
+            await queryClient.invalidateQueries({ queryKey: ['earnings'] });
+            await fetchquery.refetch({ cancelRefetch: false });
+
+        } catch (error: any) {
+            console.error("Withdrawal failed:", error);
+
+            if (error.message?.includes("User rejected") || error.message?.includes("User declined")) {
+                addToast("Transaction cancelled", "info");
+            } else if (error.message?.includes("Insufficient")) {
+                addToast("Insufficient funds in vault", "error");
+            } else {
+                addToast(`Withdrawal failed: ${error.message || "Unknown error"}`, "error");
+            }
+        } finally {
             setWithdrawing(false);
-            return;
         }
-
-        for (const e of claimSources) {
-            const adIdBytes = adIdToBytes(e.ad);
-            const advertiserPubkey = new PublicKey(e.advertiser);
-
-            const [adPda] = PublicKey.findProgramAddressSync(
-                [Buffer.from("ad"), advertiserPubkey.toBuffer(), adIdBytes],
-                program.programId
-            );
-            const [vaultPda] = PublicKey.findProgramAddressSync(
-                [Buffer.from("vault"), advertiserPubkey.toBuffer(), adIdBytes],
-                program.programId
-            );
-            const [earningsPda] = PublicKey.findProgramAddressSync(
-                [Buffer.from("earnings"), adPda.toBuffer(), publisherPubkey.toBuffer()],
-                program.programId
-            );
-
-            const ix = await program.methods.claim().accounts({
-                vault: vaultPda,
-                earnings: earningsPda,
-                ad: adPda,
-                advertiser: advertiserPubkey,
-                publisher: publisherPubkey,
-                systemProgram: SystemProgram.programId,
-            }).instruction();
-
-            transaction.add(ix);
-        }
-
-        if (transaction.instructions.length === 0) {
-            addToast("Nothing to claim", "info");
-            setWithdrawing(false);
-            return;
-        }
-
-        const { blockhash } = await connection.getLatestBlockhash();
-        transaction.recentBlockhash = blockhash;
-        transaction.feePayer = wallet.publicKey;
-
-        const { value: simResult } = await connection.simulateTransaction(transaction);
-        if (simResult.err) {
-            console.error("Simulation failed:", simResult.err, simResult.logs);
-            simResult.logs?.forEach(l => console.log(l));
-            addToast(`Transaction would fail: ${JSON.stringify(simResult.err)}`, "error");
-            setWithdrawing(false);
-            return;
-        }
-
-        const signed = await wallet.signTransaction(transaction);
-        const txSig = await connection.sendRawTransaction(signed.serialize());
-        const confirmation = await connection.confirmTransaction(txSig, "confirmed");
-        if (confirmation.value.err) {
-            throw new Error(`Transaction confirmed but failed: ${JSON.stringify(confirmation.value.err)}`);
-        }
-
-        const claimedAdIds = claimSources.map(r => r.ad);
-        await fetch("/api/crud/Publisher/Earning", {
-            method: "PATCH",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ adIds: claimedAdIds })
-        });
-
-        addToast("Withdrawal successful!", "success");
-        await queryClient.invalidateQueries({ queryKey: ['earnings'] });
-        await fetchquery.refetch({ cancelRefetch: false });
-
-    } catch (error: any) {
-        console.error("Withdrawal failed:", error);
-
-        if (error.message?.includes("User rejected") || error.message?.includes("User declined")) {
-            addToast("Transaction cancelled", "info");
-        } else if (error.message?.includes("Insufficient")) {
-            addToast("Insufficient funds in vault", "error");
-        } else {
-            addToast(`Withdrawal failed: ${error.message || "Unknown error"}`, "error");
-        }
-    } finally {
-        setWithdrawing(false);
-    }
-};
+    };
 
     return (
         <>

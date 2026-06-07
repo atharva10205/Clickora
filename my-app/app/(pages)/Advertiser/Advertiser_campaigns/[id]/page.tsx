@@ -243,86 +243,104 @@ const CampaignPage = () => {
         setSelectedTags(data.ad.Tags ?? []);
     };
 
-    const Withdraw = async () => {
-        if (!ad || !wallet.publicKey) { alert("Please connect your wallet first"); return; }
-        if (!withdrawAddress.trim()) { alert("Please enter a recipient address"); return; }
-        let recipientPubkey: PublicKey;
-        try { recipientPubkey = new PublicKey(withdrawAddress); }
-        catch (err) { alert("Invalid recipient address"); return; }
-        if (wallet.publicKey.toString() !== Wallet_Address) {
-            alert("You must be connected with the advertiser wallet to withdraw funds");
+   const Withdraw = async () => {
+    if (!ad || !wallet.publicKey) { showToast("Please connect your wallet first"); return; }
+    if (!withdrawAddress.trim()) { showToast("Please enter a recipient address"); return; }
+    
+    let recipientPubkey: PublicKey;
+    try { 
+        recipientPubkey = new PublicKey(withdrawAddress); 
+    } catch (err) { 
+        showToast("Invalid recipient address"); 
+        return; 
+    }
+    
+    if (wallet.publicKey.toString() !== Wallet_Address) {
+        showToast("You must be connected with the advertiser wallet to withdraw funds");
+        return;
+    }
+
+    setWithdrawing(true);
+    try {
+        const program = getProgram(wallet, walletConnection);
+        const adID = adIdToBytes(ad.id);
+        const advertiserKey = new PublicKey(Wallet_Address);
+        const PROGRAM_ID = new PublicKey("5AhkXaS77PEWP8pDdQx3SMDbEizqJFns6an8J42dXUuw");
+
+        const [adPDA] = PublicKey.findProgramAddressSync(
+            [Buffer.from("ad"), advertiserKey.toBuffer(), Buffer.from(adID)],
+            PROGRAM_ID
+        );
+        const [vaultPDA] = PublicKey.findProgramAddressSync(
+            [Buffer.from("vault"), advertiserKey.toBuffer(), Buffer.from(adID)],
+            PROGRAM_ID
+        );
+
+        const rawLamports = await walletConnection.getBalance(vaultPDA);
+        const cpc = Number(ad.cost_per_click ?? 0);
+        const totalOwedLamports = Math.round((analytics?.totalClicks ?? 0) * cpc * 1e9);
+        const withdrawableLamports = Math.max(0, rawLamports - totalOwedLamports);
+
+        if (withdrawableLamports === 0) {
+            showToast("No withdrawable funds — remaining balance is reserved for publisher payouts");
+            setWithdrawing(false);
             return;
         }
-        setWithdrawing(true);
-        try {
-            const program = getProgram(wallet, walletConnection);
-            const adID = adIdToBytes(ad.id);
-            const advertiserKey = new PublicKey(Wallet_Address);
-            const PROGRAM_ID = new PublicKey("5AhkXaS77PEWP8pDdQx3SMDbEizqJFns6an8J42dXUuw");
 
-            const [adPDA] = PublicKey.findProgramAddressSync(
-                [Buffer.from("ad"), advertiserKey.toBuffer(), Buffer.from(adID)], PROGRAM_ID
-            );
+        const signature = await program.methods
+            .refund(new BN(withdrawableLamports))
+            .accounts({
+                vault: vaultPDA,
+                ad: adPDA,
+                advertiserKey: advertiserKey,
+                recipient: recipientPubkey,
+                signer: wallet.publicKey,
+                systemProgram: SystemProgram.programId,
+            })
+            .rpc();
 
-            const adAccount = await program.account.ad.fetch(adPDA);
+        const latestBlockhash = await walletConnection.getLatestBlockhash();
+        await walletConnection.confirmTransaction(
+            { signature, ...latestBlockhash },
+            'confirmed'
+        );
 
-            if (!adAccount.advertiser.equals(wallet.publicKey)) {
-                alert("Connected wallet doesn't match the ad's advertiser on-chain");
-                setWithdrawing(false);
-                return;
-            }
-            const [vaultPDA] = PublicKey.findProgramAddressSync(
-                [Buffer.from("vault"), advertiserKey.toBuffer(), Buffer.from(adID)], PROGRAM_ID
-            );
-            const rawLamports = await walletConnection.getBalance(vaultPDA);
-            const cpc = Number(ad.cost_per_click ?? 0);
-            const totalOwedLamports = Math.round((analytics?.totalClicks ?? 0) * cpc * 1e9);
-            const withdrawableLamports = Math.max(0, rawLamports - totalOwedLamports);
+        await fetch(`/api/crud/Advertiser/Advertiser-campaign/${id}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                tx_signature: signature,
+                publisher_wallet: withdrawAddress,
+                total_amount: withdrawableLamports,
+            }),
+        });
 
-            console.log("withdrawable SOL:", withdrawableLamports / 1e9);
-            if (withdrawableLamports === 0) {
-                alert("No withdrawable funds — remaining balance is reserved for publisher payouts");
-                setWithdrawing(false);
-                return;
-            }
-            const txn = await program.methods.refund(new BN(withdrawableLamports)).accounts({
-                vault: vaultPDA, ad: adPDA, advertiserKey, recipient: recipientPubkey,
-                signer: wallet.publicKey, systemProgram: SystemProgram.programId,
-            }).transaction();
+        const res = await fetch(`/api/crud/Advertiser/Advertiser-campaign/${id}`);
+        const data = await res.json();
+        setAd(data.ad);
+        setAnalytics(data.analytics);
+        setVaultBalance(0);
 
-            const { blockhash, lastValidBlockHeight } = await walletConnection.getLatestBlockhash();
+        setShowWithdrawModal(false);
+        setWithdrawAddress('');
+        setWithdrawnAmount((withdrawableLamports / 1e9).toFixed(6));
+        setShowSuccessModal(true);
 
-            txn.recentBlockhash = blockhash;
-            txn.feePayer = wallet.publicKey;
-
-            const signature = await wallet.sendTransaction(txn, walletConnection);
-
-            await walletConnection.confirmTransaction({ signature, blockhash, lastValidBlockHeight }, 'confirmed');
-            await fetch(`/api/crud/Advertiser/Advertiser-campaign/${id}`, {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    tx_signature: signature,
-                    publisher_wallet: withdrawAddress,
-                    total_amount: withdrawableLamports,
-                }),
-            });
-
-            setAd(prev => prev ? { ...prev, status: false, RemainingAmount: 0 } : prev);
-            setVaultBalance(0);
-            setShowWithdrawModal(false);
-            setWithdrawAddress('');
-            setWithdrawnAmount((withdrawableLamports / 1e9).toFixed(6));
-            setShowSuccessModal(true);
-        } catch (err: any) {
-            console.error("Withdrawal failed:", err);
-            if (err.message?.includes("Unauthorized")) alert("Unauthorized: You must be the advertiser to withdraw funds");
-            else if (err.message?.includes("InvalidAmount")) alert("Invalid amount: Vault may be empty or below minimum rent");
-            else alert(`Withdrawal failed: ${err.message || "Unknown error"}`);
-        } finally {
-            setWithdrawing(false);
+    } catch (err: any) {
+        console.error("Withdrawal failed:", err);
+        if (err.message?.includes("Unauthorized")) {
+            showToast("Unauthorized: You must be the advertiser to withdraw funds");
+        } else if (err.message?.includes("InvalidAmount")) {
+            showToast("Invalid amount: Vault may be empty or below minimum rent");
+        } else if (err.message?.includes("User rejected")) {
+            showToast("Transaction rejected by wallet");
+        } else {
+            showToast(`Withdrawal failed: ${err.message || "Unknown error"}`);
         }
-    };
+    } finally {
+        setWithdrawing(false);
+    }
+};
 
     const showToast = (msg: string) => {
         setToast(msg);
@@ -342,17 +360,26 @@ const CampaignPage = () => {
         }
     };
 
-    const handleDeleteClick = async () => {
-        if (!Wallet_Address || !ad?.id) return;
+   const handleDeleteClick = async () => {
+    if (!Wallet_Address || !ad?.id) return;
 
-        if (ad.AmountNull !== true) {
-            showToast("Withdraw remaining funds before deleting this campaign.");
-            return;
-        }
+    const res = await fetch(`/api/crud/Advertiser/Advertiser-campaign/${id}`);
+    const data = await res.json();
 
-        setShowDeleteModal(true);
-    };
+    if (!data.ad) {
+        showToast("Failed to verify campaign state.");
+        return;
+    }
 
+    setAd(data.ad);
+
+    if (data.ad.AmountNull !== true) {
+        showToast("Withdraw remaining funds before deleting this campaign.");
+        return;
+    }
+
+    setShowDeleteModal(true);
+};
     if (loading) return (
         <div className="flex h-screen bg-[#0a0a0a] items-center justify-center">
             <div className="w-5 h-5 border-2 border-gray-800 border-t-gray-400 rounded-full animate-spin" />

@@ -73,6 +73,18 @@ model Click {
   claimed_at    DateTime?
   created_at    DateTime  @default(now())
   calculated    Boolean   @default(false)
+  claimable_amount BigInt   @default(0)
+}
+
+model CLickEarningRecord {
+  id               Int      @id @default(autoincrement())
+  publisher_id     String
+  ad_id            String
+  claimable_amount BigInt   
+  claimed          Boolean  @default(false)
+  updated_at       DateTime @updatedAt
+
+  @@unique([publisher_id, ad_id])
 }
 
 model EarningsRecord {

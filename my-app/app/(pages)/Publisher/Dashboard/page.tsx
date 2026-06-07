@@ -373,7 +373,7 @@ const Dashboard = () => {
                                 <p className="text-xs text-gray-600 mb-5 max-w-xs">Add your first property to start tracking earnings</p>
                                 <button
                                     onClick={() => router.push("/Publisher-campaign")}
-                                    className="px-4 py-2 rounded-lg text-xs font-semibold transition-all hover:opacity-90"
+                                    className="px-4 py-2 cursor-pointer rounded-lg text-xs font-semibold transition-all hover:opacity-90"
                                     style={{ background: accent, color: '#000000' }}
                                 >
                                     Add Site
