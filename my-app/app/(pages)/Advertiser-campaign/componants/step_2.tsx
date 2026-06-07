@@ -85,7 +85,7 @@ useEffect(() => {
 
     useEffect(() => { setErrors({}); }, [description, input, KeyWords, selectedTags, Title, imageFile]);
 
-    const handleKeyDown = (e) => {
+    const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
         if (e.key === "Enter" || e.key === " " || e.key === ",") {
             e.preventDefault();
             const value = input.trim().toLowerCase();

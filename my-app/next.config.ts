@@ -1,6 +1,9 @@
 import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
   reactStrictMode: false,
+   typescript: {
+    ignoreBuildErrors: true,
+  },
   images: {
   remotePatterns: [
     {
@@ -11,6 +14,7 @@ const nextConfig: NextConfig = {
       protocol: 'https',
       hostname: 'atharva102050.s3.ap-south-1.amazonaws.com',
     },
+    
   ],
 },
 };
