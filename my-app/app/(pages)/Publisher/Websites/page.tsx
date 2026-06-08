@@ -15,7 +15,7 @@ const Websites = () => {
     const [websites, setWebsites] = useState([]);
     const [copiedUrl, setCopiedUrl] = useState<string | null>(null);
     const [accent, setAccent] = useState('#10B981');
-    const [sortKey, setSortKey] = useState<'name' | 'earnings' | 'impressions' | 'clicks'>('earnings');
+    const [sortKey, setSortKey] = useState<'name' | 'earnings' | 'impressions' | 'clicks' | 'date'>('date');
     const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
 
     useEffect(() => {
@@ -49,13 +49,13 @@ const Websites = () => {
     }, []);
 
     const handleCopy = (publisherUrl: string) => {
-        const code = `<div id="my-widget"></div>\n<script src="http://localhost:3000/my-widget.js" data-id="${publisherUrl}"></script>`;
+        const code = `<div id="my-widget"></div>\n<script src="https://clickora-seven.vercel.app//my-widget.js" data-id="${publisherUrl}"></script>`;
         navigator.clipboard.writeText(code);
         setCopiedUrl(publisherUrl);
         setTimeout(() => setCopiedUrl(null), 2000);
     };
 
-    const toggleSort = (key: 'name' | 'earnings' | 'impressions' | 'clicks') => {
+    const toggleSort = (key: 'name' | 'earnings' | 'impressions' | 'clicks' | 'date') => {
         if (sortKey === key) setSortDir(d => d === 'desc' ? 'asc' : 'desc');
         else { setSortKey(key); setSortDir('desc'); }
     };
@@ -66,6 +66,7 @@ const Websites = () => {
         if (sortKey === 'earnings') diff = a.earnings - b.earnings;
         if (sortKey === 'impressions') diff = a.impressions - b.impressions;
         if (sortKey === 'clicks') diff = a.clicks - b.clicks;
+        if (sortKey === 'date') diff = new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
         return sortDir === 'desc' ? -diff : diff;
     });
 
@@ -106,7 +107,7 @@ const Websites = () => {
 
                 <div className="flex items-center gap-2 mb-6 font-mono">
                     <span className="text-xs text-gray-600 mr-1">Sort:</span>
-                    {(['name', 'earnings', 'impressions', 'clicks'] as const).map(key => (
+                    {(['date', 'name', 'earnings', 'impressions', 'clicks'] as const).map(key => (
                         <button
                             key={key}
                             onClick={() => toggleSort(key)}
@@ -157,8 +158,8 @@ const Websites = () => {
                                                 <div className="flex items-center gap-3 mb-1.5">
                                                     <h3 className="text-lg font-semibold text-white tracking-tight">{site.website_name}</h3>
                                                     <span className={`text-xs px-2 py-0.5 rounded font-mono tracking-wide border ${site.status === 'ACTIVE'
-                                                            ? 'bg-gray-800 text-gray-300 border-gray-700'
-                                                            : 'bg-[#1a1a1a] text-gray-500 border-gray-800'
+                                                        ? 'bg-gray-800 text-gray-300 border-gray-700'
+                                                        : 'bg-[#1a1a1a] text-gray-500 border-gray-800'
                                                         }`}>
                                                         {site.status === 'ACTIVE' && (
                                                             <span className="inline-block w-1.5 h-1.5 rounded-full bg-gray-300 mr-1.5 align-middle animate-pulse" />
