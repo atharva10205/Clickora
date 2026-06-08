@@ -5,7 +5,7 @@
 
   async function trackImpression(adId, publisher_url) {
     try {
-      await fetch("http://localhost:3000/api/Ad/Track-impression", {
+      await fetch("https://clickora-seven.vercel.app/api/Ad/Track-impression", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ adId, publisher_url })
@@ -42,7 +42,7 @@
 
     window.AD_DATA.trackingToken = null;
 
-    fetch("http://localhost:3000/api/Ad/Track-click", {
+    fetch("https://clickora-seven.vercel.app/api/Ad/Track-click", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ events: [event] })
@@ -55,7 +55,7 @@
   async function load_ad() {
     container.innerHTML = '<p style="color:#999;">Loading ad...</p>';
 
-    const res = await fetch(`http://localhost:3000/api/Ad?id=${widgetId}`);
+    const res = await fetch(`https://clickora-seven.vercel.app/api/Ad?id=${widgetId}`);
     const data = await res.json();
 
     if (!data.success) {
