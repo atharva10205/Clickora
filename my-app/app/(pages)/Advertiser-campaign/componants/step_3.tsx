@@ -133,15 +133,19 @@ export default function Three({ next, back, adID }) {
             const SERVICE_FEE = new PublicKey("C3qzo7FpXSgQ7ytMdjhqjd3R5ZWReEYFeHdKD7oyXpLz");
 
             const initIx = await program.methods.initialiseAd(adIdBytes).accounts({
+                ad: adPDA,
+                vault: vaultPDA,
                 advertiser: walletPublicKey,
-                authority: AUTHORITY, systemProgram: SystemProgram.programId,
+                authority: AUTHORITY,
+                systemProgram: SystemProgram.programId,
             }).instruction();
-
             const tx = await program.methods.deposit(new BN(lamports)).accounts({
+                ad: adPDA,
+                vault: vaultPDA,
                 advertiser: walletPublicKey,
-                serviceFee: SERVICE_FEE, systemProgram: SystemProgram.programId,
+                serviceFee: SERVICE_FEE,
+                systemProgram: SystemProgram.programId,
             }).preInstructions([initIx]).rpc();
-
 
             const res = await fetch("/api/crud/Advertiser-campaign-step-3", {
                 method: "POST",
