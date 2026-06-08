@@ -235,6 +235,10 @@ const Earnings = () => {
 
     const Withdraw_BTN = async () => {
 
+        if (!wallet.connected) {
+            await wallet.connect();
+            return;
+        }
         if (!wallet.publicKey || !wallet.signTransaction) {
             addToast("Please connect your wallet first", "error");
             return;
