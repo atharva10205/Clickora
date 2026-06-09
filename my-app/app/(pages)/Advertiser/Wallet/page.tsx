@@ -136,35 +136,16 @@ const Wallet = () => {
 
       <main className="flex-1 p-8 overflow-y-auto">
 
-        {/* Header */}
         <div className="flex items-center justify-between mb-10">
           <div>
             <h1 className="text-3xl font-bold mb-1 text-white tracking-tight">Wallet</h1>
             <p className="text-gray-600 text-sm">Manage your funds and transactions</p>
           </div>
-          <button
-            onClick={() => fetchWallet(true)}
-            disabled={refreshing}
-            className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#161616] text-gray-200 text-sm font-semibold disabled:opacity-50 hover:-translate-y-0.5 active:translate-y-0 transition-all duration-200"
-            style={{ border: `1px solid ${alpha(0.18)}` }}
-            onMouseEnter={e => {
-              e.currentTarget.style.borderColor = accent;
-              e.currentTarget.style.boxShadow = `0 0 18px ${hAlpha(0.2)}`;
-            }}
-            onMouseLeave={e => {
-              e.currentTarget.style.borderColor = alpha(0.18);
-              e.currentTarget.style.boxShadow = 'none';
-            }}
-          >
-            <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} />
-            Refresh
-          </button>
+         
         </div>
 
-        {/* Stat Cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-5 mb-8">
 
-          {/* Total Spent */}
           <div
             className="bg-[#111111] p-6 rounded-xl transition-all duration-200"
             style={{ border: `1px solid ${alpha(0.08)}` }}

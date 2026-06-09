@@ -11,57 +11,43 @@ export async function GET() {
 
     const email = session.user.email;
 
-    const publishers = await prisma.publisher.findMany({
-        where: { email },
-        select: { id: true, website_name: true, website_url: true }
-    });
-
-    if (publishers.length === 0) {
-        return NextResponse.json({
-            summary: { totalImpressions: 0, totalClicks: 0, ctr: 0, totalEarnings: 0 },
-            chartData: [],
-            topSites: [],
-            accent: '#FFFFFF'
-        });
-    }
-
-    const publisher_ids = publishers.map(p => p.id);
-
     const sevenDaysAgo = new Date();
     sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
 
+    const ads = await prisma.ad.findMany({
+        where: { user_email: email },
+        select: { id: true, cost_per_click: true }
+    });
+
+    if (ads.length === 0) {
+        const user = await prisma.user.findUnique({ where: { email }, select: { accent: true } });
+        return NextResponse.json({
+            summary: { totalImpressions: 0, totalClicks: 0, ctr: 0, totalSpend: 0 },
+            chartData: [],
+            topSites: [],
+            accent: user?.accent ?? '#FFFFFF'
+        });
+    }
+
+    const ad_ids = ads.map(a => a.id);
+    const adCostMap = new Map(ads.map(a => [a.id, a.cost_per_click]));
+
     const [impressionRecords, clickRecords, user] = await Promise.all([
         prisma.impression.findMany({
-            where: {
-                publisher_id: { in: publisher_ids },
-                created_at: { gte: sevenDaysAgo }
-            },
-            select: { impression: true, created_at: true, publisher_id: true }
+            where: { ad_id: { in: ad_ids }, created_at: { gte: sevenDaysAgo } },
+            select: { impression: true, created_at: true, publisher_id: true, ad_id: true }
         }),
         prisma.click.findMany({
-            where: {
-                publisher_id: { in: publisher_ids },
-                created_at: { gte: sevenDaysAgo }
-            },
+            where: { ad_id: { in: ad_ids }, created_at: { gte: sevenDaysAgo } },
             select: { ad_id: true, created_at: true, publisher_id: true }
         }),
-        prisma.user.findUnique({
-            where: { email },
-            select: { accent: true }
-        })
+        prisma.user.findUnique({ where: { email }, select: { accent: true } })
     ]);
 
     const totalImpressions = impressionRecords.reduce((a, r) => a + r.impression, 0);
     const totalClicks = clickRecords.length;
     const ctr = totalImpressions > 0 ? (totalClicks / totalImpressions) * 100 : 0;
-
-    const unique_ad_ids = [...new Set(clickRecords.map(c => c.ad_id))];
-    const ads = await prisma.ad.findMany({
-        where: { id: { in: unique_ad_ids } },
-        select: { id: true, cost_per_click: true }
-    });
-    const adCostMap = new Map(ads.map(a => [a.id, a.cost_per_click]));
-    const totalEarnings = clickRecords.reduce((total, click) => {
+    const totalSpend = clickRecords.reduce((total, click) => {
         return total + Number(adCostMap.get(click.ad_id) ?? 0);
     }, 0);
 
@@ -98,7 +84,17 @@ export async function GET() {
         siteClicksMap.set(c.publisher_id, (siteClicksMap.get(c.publisher_id) ?? 0) + 1);
     }
 
-    const topSites = publishers.map(p => {
+    const publisherIds = [...new Set([
+        ...impressionRecords.map(r => r.publisher_id),
+        ...clickRecords.map(c => c.publisher_id)
+    ])];
+
+    const publisherRecords = await prisma.publisher.findMany({
+        where: { id: { in: publisherIds } },
+        select: { id: true, website_name: true, website_url: true }
+    });
+
+    const topSites = publisherRecords.map(p => {
         const impr = siteImpressionsMap.get(p.id) ?? 0;
         const clicks = siteClicksMap.get(p.id) ?? 0;
         const siteCtr = impr > 0 ? (clicks / impr) * 100 : 0;
@@ -115,7 +111,7 @@ export async function GET() {
             totalImpressions,
             totalClicks,
             ctr: Number(ctr.toFixed(2)),
-            totalEarnings: Number(totalEarnings.toFixed(4)),
+            totalSpend: Number(totalSpend.toFixed(4)),
         },
         chartData,
         topSites,

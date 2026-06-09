@@ -39,21 +39,21 @@ export default function Two({ adID, next, back }: StepProps) {
 
     const [accent, setAccent] = useState('#ffffff');
 
-useEffect(() => {
-    const fetchAccent = async () => {
-        const res  = await fetch("/api/crud/Advertiser-campaign-step-2");
-        const data = await res.json();
-        setAccent(data.accent ?? '#ffffff');
-    };
-    fetchAccent();
-}, []);
+    useEffect(() => {
+        const fetchAccent = async () => {
+            const res = await fetch("/api/crud/Advertiser-campaign-step-2");
+            const data = await res.json();
+            setAccent(data.accent ?? '#ffffff');
+        };
+        fetchAccent();
+    }, []);
 
-const alpha = (op: number) => {
-    const r = parseInt(accent.slice(1, 3), 16);
-    const g = parseInt(accent.slice(3, 5), 16);
-    const b = parseInt(accent.slice(5, 7), 16);
-    return `rgba(${r},${g},${b},${op})`;
-};
+    const alpha = (op: number) => {
+        const r = parseInt(accent.slice(1, 3), 16);
+        const g = parseInt(accent.slice(3, 5), 16);
+        const b = parseInt(accent.slice(5, 7), 16);
+        return `rgba(${r},${g},${b},${op})`;
+    };
 
     const [KeyWords, setKeyWords] = useState([]);
     const [input, setInput] = useState("");
@@ -64,23 +64,23 @@ const alpha = (op: number) => {
     const [Title, setTitle] = useState("");
     const [imageFile, setImageFile] = useState<File | null>(null);
     const [imagePreview, setImagePreview] = useState<string>("");
-const completedRef = useRef(false);
-const adIDRef = useRef(adID);
+    const completedRef = useRef(false);
+    const adIDRef = useRef(adID);
 
-useEffect(() => {
-    adIDRef.current = adID;
-}, [adID]);
+    useEffect(() => {
+        adIDRef.current = adID;
+    }, [adID]);
 
-useEffect(() => {
-    return () => {
-        if (!completedRef.current && adIDRef.current) {
-            navigator.sendBeacon(
-                "/api/crud/Advertiser-campaign-cleanup",
-                JSON.stringify({ adID: adIDRef.current })
-            );
-        }
-    };
-}, []);
+    useEffect(() => {
+        return () => {
+            if (!completedRef.current && adIDRef.current) {
+                navigator.sendBeacon(
+                    "/api/crud/Advertiser-campaign-cleanup",
+                    JSON.stringify({ adID: adIDRef.current })
+                );
+            }
+        };
+    }, []);
 
 
     useEffect(() => { setErrors({}); }, [description, input, KeyWords, selectedTags, Title, imageFile]);
@@ -436,7 +436,7 @@ useEffect(() => {
                                     </button>
                                     <button
                                         onClick={Next_btn}
-                                        className="px-6 py-2.5 rounded-lg bg-[#161616] text-gray-200 text-sm font-semibold hover:-translate-y-0.5 active:translate-y-0 transition-all duration-200"
+                                        className="px-6 py-2.5 cursor-pointer rounded-lg bg-[#161616] text-gray-200 text-sm font-semibold hover:-translate-y-0.5 active:translate-y-0 transition-all duration-200"
                                         style={{ border: `1px solid ${alpha(0.25)}` }}
                                         onMouseEnter={e => {
                                             e.currentTarget.style.borderColor = accent;

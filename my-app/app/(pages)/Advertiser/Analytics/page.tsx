@@ -10,12 +10,12 @@ import { useSession } from 'next-auth/react';
 import { useQuery } from '@tanstack/react-query';
 
 type AnalyticsData = {
-    summary: {
-        totalImpressions: number;
-        totalClicks: number;
-        ctr: number;
-        totalEarnings: number;
-    };
+   summary: {
+    totalImpressions: number;
+    totalClicks: number;
+    ctr: number;
+    totalSpend: number;
+};
     chartData: { date: string; impressions: number; clicks: number }[];
     topSites: { name: string; impressions: number; clicks: number; ctr: number }[];
     accent: string;
@@ -26,6 +26,7 @@ const fetchAnalytics = async (): Promise<AnalyticsData> => {
     if (!res.ok) throw new Error('Failed to fetch analytics');
     return res.json();
 };
+
 
 const Analytics = () => {
     const activeTab = 'Analytics';
@@ -60,10 +61,7 @@ const Analytics = () => {
                 ? `${(summary.totalClicks / 1000).toFixed(1)}K`
                 : String(summary.totalClicks)
         },
-        {
-            metric: 'Total Earnings',
-            value: `${summary.totalEarnings.toFixed(4)} SOL`
-        },
+        { metric: 'Total Spend', value: `${summary.totalSpend.toFixed(4)} SOL` },
     ] : [];
 
     if (isLoading) {
@@ -125,7 +123,7 @@ const Analytics = () => {
                             <p className="text-xs text-gray-600 mb-2">{item.metric}</p>
                             <p
                                 className="text-2xl font-semibold tabular-nums"
-                                style={{ color: item.metric === 'Total Earnings' ? accent : 'white' }}
+                               style={{ color: item.metric === 'Total Spend' ? accent : 'white' }}
                             >
                                 {item.value}
                             </p>

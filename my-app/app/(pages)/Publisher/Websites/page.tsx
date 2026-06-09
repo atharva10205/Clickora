@@ -1,6 +1,6 @@
 'use client'
 
-import { Plus, BarChart3, Code, Copy, Edit, Link, Trash2, RefreshCw, Check } from 'lucide-react';
+import { Plus, BarChart3, Code, Copy, Edit, Link, Trash2, RefreshCw, Check, MoreHorizontal } from 'lucide-react';
 import Sidebar from '../sidebar/sidebar';
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
@@ -173,33 +173,24 @@ const Websites = () => {
                                                 </p>
                                             </div>
 
-                                            {/* Action Buttons */}
                                             <div className="flex gap-2">
-                                                {site.status !== 'REVIEW' && (
-                                                    <>
-                                                        <button className="p-2 rounded-lg bg-[#161616] border border-gray-800/60 text-gray-500 hover:text-gray-200 hover:border-gray-600 transition-all duration-150" title="Get Code">
-                                                            <Code className="w-4 h-4" />
-                                                        </button>
-                                                        <button className="p-2 rounded-lg bg-[#161616] border border-gray-800/60 text-gray-500 hover:text-gray-200 hover:border-gray-600 transition-all duration-150" title="Edit">
-                                                            <Edit className="w-4 h-4" />
-                                                        </button>
-                                                        <button className="p-2 rounded-lg bg-[#161616] border border-gray-800/60 text-gray-500 hover:text-gray-200 hover:border-gray-600 transition-all duration-150" title="View Stats">
-                                                            <BarChart3 className="w-4 h-4" />
-                                                        </button>
-                                                    </>
-                                                )}
+
                                                 {site.status === 'REVIEW' && (
                                                     <button className="p-2 rounded-lg bg-[#161616] border border-gray-800/60 text-gray-500 hover:text-gray-200 hover:border-gray-600 transition-all duration-150" title="Refresh">
                                                         <RefreshCw className="w-4 h-4" />
                                                     </button>
                                                 )}
-                                                <button className="p-2 rounded-lg bg-[#161616] border border-gray-800/60 text-gray-500 hover:text-red-400 hover:border-red-900/60 transition-all duration-150" title="Remove">
-                                                    <Trash2 className="w-4 h-4" />
+                                                <button
+                                                    onClick={() => router.push(`/Publisher/Publisher_website/${site.publisher_url}`)}
+                                                    className="p-2 rounded-lg cursor-pointer bg-[#161616] border border-gray-800/60 text-gray-500 hover:text-gray-200 hover:border-gray-600 transition-all duration-150"
+                                                    title="More options"
+                                                >
+                                                    <MoreHorizontal className="w-4 h-4" />
                                                 </button>
+                                               
                                             </div>
                                         </div>
 
-                                        {/* Metrics Row */}
                                         <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-6">
                                             {[
                                                 { label: 'Impressions', value: site.status === 'REVIEW' ? '0' : site.impressions.toLocaleString(), accent: false },
