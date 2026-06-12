@@ -13,17 +13,18 @@ export async function GET() {
         const [Advertisers, user] = await Promise.all([
             prisma.ad.findMany({
                 where: { user_email: session.user.email },
-                select: {
-                    id: true,
-                    wallet_address: true,
-                    destination_url: true,
-                    business_name: true,
-                    status: true,
-                    cost_per_click: true,
-                    impression: true,
-                    Cost: true,
-                    created_at: true,
-                }
+               select: {
+    id: true,
+    wallet_address: true,
+    destination_url: true,
+    business_name: true,
+    status: true,
+    cost_per_click: true,
+    impression: true,
+    Cost: true,
+    RemainingAmount: true,
+    created_at: true,
+}
             }),
             prisma.user.findUnique({
                 where: { email: session.user.email },

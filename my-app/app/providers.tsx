@@ -8,7 +8,7 @@ import { PhantomWalletAdapter } from '@solana/wallet-adapter-wallets'
 import { clusterApiUrl } from '@solana/web3.js'
 
 const wallets = [new PhantomWalletAdapter()];
-const endpoint = clusterApiUrl('devnet'); // change to 'mainnet-beta' when ready
+const endpoint = clusterApiUrl('devnet'); 
 
 export default function Providers({ children }: { children: React.ReactNode }) {
   const [queryClient] = useState(() => new QueryClient({

@@ -124,8 +124,9 @@ export default function Three({ next, back, adID }) {
         else if (selected === "custom") clickValue = Customclick;
 
         const totalSOL = clickValue * maximim_cost_per_bid;
-        const lamports = Math.round(totalSOL * 1_000_000_000);
-
+        const platformFeeSOL = totalSOL * 0.01;
+        const totalWithFee = totalSOL + platformFeeSOL;
+        const lamports = Math.round(totalWithFee * 1_000_000_000);
         try {
             const adIdBytes = adIdToBytes(adID);
             const program = getProgram(ClintKey, connection);
@@ -374,6 +375,41 @@ export default function Three({ next, back, adID }) {
 
                                                     </div>
                                                 </div>
+
+                                                {budget && selected && (
+                                                    <div className="rounded-xl mt-5 overflow-hidden" style={{ border: '1px solid rgba(255,255,255,0.05)' }}>
+                                                        <div className="px-4 py-3" style={{ background: alpha(0.04) }}>
+                                                            <p className="text-[10px] text-gray-600 uppercase tracking-[0.15em]">Payment Breakdown</p>
+                                                        </div>
+                                                        <div className="px-4 py-3 space-y-2.5 bg-[#0d0d0d]">
+                                                            {(() => {
+                                                                const clicks = selected === 'low' ? 200 : selected === 'medium' ? 400 : selected === 'high' ? 600 : Customclick;
+                                                                const base = clicks * maximim_cost_per_bid;
+                                                                const fee = base * 0.01;
+                                                                const total = base + fee;
+                                                                return (
+                                                                    <>
+                                                                        <div className="flex justify-between text-[11px]">
+                                                                            <span className="text-gray-600">{clicks.toLocaleString()} clicks × {formatSOL(maximim_cost_per_bid)} SOL</span>
+                                                                            <span className="text-gray-400 tabular-nums">{formatSOL(base)} SOL</span>
+                                                                        </div>
+                                                                        <div className="flex justify-between text-[11px]">
+                                                                            <span className="text-gray-600">Platform fee (1%)</span>
+                                                                            <span className="text-gray-500 tabular-nums">+{formatSOL(fee)} SOL</span>
+                                                                        </div>
+                                                                        <div className="border-t border-white/[0.04] pt-2.5 flex justify-between">
+                                                                            <span className="text-[11px] text-gray-400 font-medium">You Pay</span>
+                                                                            <span className="text-[11px] font-bold tabular-nums" style={{ color: accent }}>
+                                                                                {formatSOL(total)} SOL
+                                                                            </span>
+                                                                        </div>
+                                                                    </>
+                                                                );
+                                                            })()}
+                                                        </div>
+                                                    </div>
+                                                )}
+
                                             </div>
                                         )}
                                     </div>

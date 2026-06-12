@@ -127,6 +127,8 @@ export async function DELETE(req: Request, { params }: { params: Promise<{ id: s
 
     return NextResponse.json({ success: true });
 }
+
+
 export async function PUT(req: Request, { params }: { params: Promise<{ id: string }> }) {
     const session = await auth();
     if (!session?.user?.email) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -134,10 +136,17 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
     const { id } = await params;
 
     const { tx_signature, publisher_wallet, total_amount } = await req.json();
+    const totalClicks = await prisma.click.count({ where: { ad_id: id } });
 
     await prisma.ad.update({
         where: { id },
-        data: { status: false, RemainingAmount: 0, Clicks: 0, AmountNull: true }
+        data: {
+            status: false,
+            RemainingAmount: 0,
+            AmountNull: true,
+            Clicks: totalClicks,
+            Cost: 0,
+        }
     });
 
     await prisma.withdrawalRecord.create({
@@ -181,16 +190,12 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
         return NextResponse.json({ error: "Ad not found" }, { status: 404 });
     }
 
-    const newClicks = (current.Clicks ?? 0) + additionalClicks;
-    const newCost = (parseFloat(current.Cost ?? "0") + additionalSOL).toString();
-    const newRemaining = (current.RemainingAmount ?? 0) + additionalLamports;
-
     const updated = await prisma.ad.update({
         where: { id },
         data: {
-            Clicks: newClicks,
-            Cost: newCost,
-            RemainingAmount: newRemaining,
+            Clicks: { increment: additionalClicks },
+            Cost: { increment: additionalSOL },
+            RemainingAmount: { increment: additionalLamports },
             status: true,
             AmountNull: false,
         },

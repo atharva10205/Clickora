@@ -135,13 +135,11 @@ const Campaigns = () => {
                                 [Buffer.from("vault"), advertiserPubkey.toBuffer(), adIdToBytes(c.id)],
                                 programId
                             );
-                            const vaultBalance = await connection.getBalance(advertiserVault);
-                            const totalOwedLamports = Math.round((c.totalOwed ?? 0) * 1e9);
-                            const spendableBalance = Math.max(0, vaultBalance - totalOwedLamports);
+                            const remainingLamports = c.RemainingAmount ?? 0;
                             const spent = (c.clicks ?? 0) * Number(c.cost_per_click ?? 0);
                             const budget = Number(c.Cost ?? 0);
                             const cpc = c.cost_per_click ? Number(c.cost_per_click) : 0;
-                            const isInsufficient = isNewCampaign ? false : (spendableBalance / 1e9 < cpc);
+                            const isInsufficient = isNewCampaign ? false : (remainingLamports / 1e9 < cpc);
                             if (isInsufficient && !isNewCampaign) {
                                 await fetch("/api/crud/Advertiser/Campaings", {
                                     method: "PATCH",
@@ -149,11 +147,10 @@ const Campaigns = () => {
                                     body: JSON.stringify({ id: c.id, status: false })
                                 });
                             }
-
                             return {
                                 ...c,
                                 status: isInsufficient ? false : c.status,
-                                vaultBalance: spendableBalance,
+                                vaultBalance: remainingLamports,
                                 spent: parseFloat(spent.toFixed(6)),
                                 percentUsed: budget > 0 ? Math.min(Math.round((spent / budget) * 100), 100) : 0,
                                 cpc: cpc.toFixed(6),
@@ -261,7 +258,7 @@ const Campaigns = () => {
                                     style={{
                                         background: sortKey === key ? '#1a1a1a' : 'transparent',
                                         borderColor: sortKey === key ? accent : 'rgba(255,255,255,0.08)',
-                                        color: sortKey === key ? accent : '#6b7280',
+                                        color: sortKey === key ? accent : '#ffffff',
                                     }}
                                 >
                                     {key.charAt(0).toUpperCase() + key.slice(1)}

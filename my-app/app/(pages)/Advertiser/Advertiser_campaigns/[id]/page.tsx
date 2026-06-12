@@ -86,13 +86,12 @@ const CampaignPage = () => {
     const { connection: walletConnection } = useConnection();
     const wallet = useWallet();
 
-
     const addClicksNum = Math.max(0, parseInt(addClicksInput) || 0);
     const cpcSOL = Number(ad?.cost_per_click ?? 0);
     const addFundsTotalSOL = addClicksNum * cpcSOL;
     const addFundsLamports = Math.round(addFundsTotalSOL * 1_000_000_000);
-    const platformFee = Math.round(addFundsLamports * 10 / 1000);
-    const netToVault = addFundsLamports - platformFee;
+    const platformFee = Math.round(addFundsLamports * 0.01);
+    const totalWithFee = addFundsLamports + platformFee;
 
     const alpha = (op: number) => {
         const r = parseInt(accent.slice(1, 3), 16);
@@ -119,9 +118,8 @@ const CampaignPage = () => {
             const { adPDA, vaultPDA } = getPDA(advertiserKey, AdId);
 
 
-
             const tx = await program.methods
-                .deposit(new BN(addFundsLamports))
+                .deposit(new BN(totalWithFee))
                 .accounts({
                     ad: adPDA,
                     vault: vaultPDA,
@@ -142,16 +140,13 @@ const CampaignPage = () => {
                 body: JSON.stringify({
                     additionalClicks: addClicksNum,
                     additionalSOL: addFundsTotalSOL,
-                    additionalLamports: netToVault,
+                    additionalLamports: addFundsLamports,
                 }),
             });
 
-            const res = await fetch(`/api/crud/Advertiser/Advertiser-campaign/${id}`);
-            const data = await res.json();
-            setAd(data.ad);
-            setAnalytics(data.analytics);
+            await refreshData();
 
-            setAddFundsDepositedSOL(addFundsTotalSOL.toFixed(6));
+            setAddFundsDepositedSOL((totalWithFee / 1e9).toFixed(6));
             setAddFundsSuccess(true);
         } catch (err: any) {
             console.error("Deposit failed:", err);
@@ -172,53 +167,40 @@ const CampaignPage = () => {
         setAddFundsSuccess(false);
     };
 
-    useEffect(() => {
-        const fetch_data = async () => {
-            try {
-                const res = await fetch(`/api/crud/Advertiser/Advertiser-campaign/${id}`);
-                const data = await res.json();
-                if (!data.ad) { setLoading(false); return; }
-                setAd(data.ad);
-                setAnalytics(data.analytics);
-                setAccent(data.accent ?? '#ffffff');
-                setTitle(data.ad.title ?? '');
-                setDescription(data.ad.Description ?? '');
-                setBusinessName(data.ad.business_name ?? '');
-                setSelectedTags(data.ad.Tags ?? []);
-                setKeywords((data.ad.keywords ?? []).join(', '));
-                setImageUrl(data.ad.imageUrl ?? '');
-                setWallet_Address(data.ad.wallet_address ?? '');
-                setUnclaimedClicks(data.analytics.unclaimedClicks ?? 0);
-            } catch (err) {
-                console.error("Fetch failed:", err);
-            } finally {
-                setLoading(false);
-            }
-        };
-        fetch_data();
-    }, [id]);
+    const refreshData = async (options?: { skipVault?: boolean }) => {
+        try {
+            const res = await fetch(`/api/crud/Advertiser/Advertiser-campaign/${id}`);
+            const data = await res.json();
+            if (!data.ad) return;
+
+            const adData = data.ad;
+            const analyticsData = data.analytics;
+
+            setAd(adData);
+            setAnalytics(analyticsData);
+            setAccent(data.accent ?? '#ffffff');
+            setTitle(adData.title ?? '');
+            setDescription(adData.Description ?? '');
+            setBusinessName(adData.business_name ?? '');
+            setSelectedTags(adData.Tags ?? []);
+            setKeywords((adData.keywords ?? []).join(', '));
+            setImageUrl(adData.imageUrl ?? '');
+            setWallet_Address(adData.wallet_address ?? '');
+            setUnclaimedClicks(analyticsData.unclaimedClicks ?? 0);
+
+            setVaultBalance((adData.RemainingAmount ?? 0) / 1e9);
+        } catch (err) {
+            console.error("Fetch failed:", err);
+        }
+    };
 
     useEffect(() => {
-        const fetchVaultBalance = async () => {
-            if (!Wallet_Address || !ad?.id || !analytics) return;
-            try {
-                const PROGRAM_ID = new PublicKey("5AhkXaS77PEWP8pDdQx3SMDbEizqJFns6an8J42dXUuw");
-                const adId = adIdToBytes(ad.id);
-                const [vaultPDA] = PublicKey.findProgramAddressSync(
-                    [Buffer.from("vault"), new PublicKey(Wallet_Address).toBuffer(), Buffer.from(adId)],
-                    PROGRAM_ID
-                );
-                const lamports = await connection.getBalance(vaultPDA);
-                const cpc = Number(ad.cost_per_click ?? 0);
-                const totalOwedLamports = Math.round(analytics.totalClicks * cpc * 1e9);
-                const withdrawableLamports = Math.max(0, lamports - totalOwedLamports);
-                setVaultBalance(withdrawableLamports / 1e9);
-            } catch (err) {
-                console.error("Failed to fetch vault balance:", err);
-            }
+        const init = async () => {
+            await refreshData();
+            setLoading(false);
         };
-        fetchVaultBalance();
-    }, [Wallet_Address, ad?.id, analytics]);
+        init();
+    }, [id]);
     const removeTag = (tag: string) => setSelectedTags(prev => prev.filter(t => t !== tag));
 
     const handleSave = async () => {
@@ -237,110 +219,101 @@ const CampaignPage = () => {
         });
         setSaving(false);
         setEditing(false);
-        const res = await fetch(`/api/crud/Advertiser/Advertiser-campaign/${id}`);
-        const data = await res.json();
-        setAd(data.ad);
-        setSelectedTags(data.ad.Tags ?? []);
+        await refreshData();
     };
 
-   const Withdraw = async () => {
-    if (!ad || !wallet.publicKey) { showToast("Please connect your wallet first"); return; }
-    if (!withdrawAddress.trim()) { showToast("Please enter a recipient address"); return; }
-    
-    let recipientPubkey: PublicKey;
-    try { 
-        recipientPubkey = new PublicKey(withdrawAddress); 
-    } catch (err) { 
-        showToast("Invalid recipient address"); 
-        return; 
-    }
-    
-    if (wallet.publicKey.toString() !== Wallet_Address) {
-        showToast("You must be connected with the advertiser wallet to withdraw funds");
-        return;
-    }
+    const Withdraw = async () => {
+        if (!ad || !wallet.publicKey) { showToast("Please connect your wallet first"); return; }
+        if (!withdrawAddress.trim()) { showToast("Please enter a recipient address"); return; }
 
-    setWithdrawing(true);
-    try {
-        const program = getProgram(wallet, walletConnection);
-        const adID = adIdToBytes(ad.id);
-        const advertiserKey = new PublicKey(Wallet_Address);
-        const PROGRAM_ID = new PublicKey("5AhkXaS77PEWP8pDdQx3SMDbEizqJFns6an8J42dXUuw");
-
-        const [adPDA] = PublicKey.findProgramAddressSync(
-            [Buffer.from("ad"), advertiserKey.toBuffer(), Buffer.from(adID)],
-            PROGRAM_ID
-        );
-        const [vaultPDA] = PublicKey.findProgramAddressSync(
-            [Buffer.from("vault"), advertiserKey.toBuffer(), Buffer.from(adID)],
-            PROGRAM_ID
-        );
-
-        const rawLamports = await walletConnection.getBalance(vaultPDA);
-        const cpc = Number(ad.cost_per_click ?? 0);
-        const totalOwedLamports = Math.round((analytics?.totalClicks ?? 0) * cpc * 1e9);
-        const withdrawableLamports = Math.max(0, rawLamports - totalOwedLamports);
-
-        if (withdrawableLamports === 0) {
-            showToast("No withdrawable funds — remaining balance is reserved for publisher payouts");
-            setWithdrawing(false);
+        let recipientPubkey: PublicKey;
+        try {
+            recipientPubkey = new PublicKey(withdrawAddress);
+        } catch (err) {
+            showToast("Invalid recipient address");
             return;
         }
 
-        const signature = await program.methods
-            .refund(new BN(withdrawableLamports))
-            .accounts({
-                vault: vaultPDA,
-                ad: adPDA,
-                advertiserKey: advertiserKey,
-                recipient: recipientPubkey,
-                signer: wallet.publicKey,
-                systemProgram: SystemProgram.programId,
-            })
-            .rpc();
-
-        const latestBlockhash = await walletConnection.getLatestBlockhash();
-        await walletConnection.confirmTransaction(
-            { signature, ...latestBlockhash },
-            'confirmed'
-        );
-
-        await fetch(`/api/crud/Advertiser/Advertiser-campaign/${id}`, {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                tx_signature: signature,
-                publisher_wallet: withdrawAddress,
-                total_amount: withdrawableLamports,
-            }),
-        });
-
-        const res = await fetch(`/api/crud/Advertiser/Advertiser-campaign/${id}`);
-        const data = await res.json();
-        setAd(data.ad);
-        setAnalytics(data.analytics);
-        setVaultBalance(0);
-
-        setShowWithdrawModal(false);
-        setWithdrawAddress('');
-        setWithdrawnAmount((withdrawableLamports / 1e9).toFixed(6));
-        setShowSuccessModal(true);
-
-    } catch (err: any) {
-        console.error("Withdrawal failed:", err);
-        if (err.message?.includes("Unauthorized")) {
-            showToast("Unauthorized: You must be the advertiser to withdraw funds");
-        } else if (err.message?.includes("InvalidAmount")) {
-            showToast("Invalid amount: Vault may be empty or below minimum rent");
-        } else if (err.message?.includes("User rejected")) {
-            showToast("Transaction rejected by wallet");
-        } else {
-            showToast(`Withdrawal failed: ${err.message || "Unknown error"}`);
+        if (wallet.publicKey.toString() !== Wallet_Address) {
+            showToast("You must be connected with the advertiser wallet to withdraw funds");
+            return;
         }
-    } finally {
-        setWithdrawing(false);
-    }
-};
+
+        setWithdrawing(true);
+        try {
+            const program = getProgram(wallet, walletConnection);
+            const adID = adIdToBytes(ad.id);
+            const advertiserKey = new PublicKey(Wallet_Address);
+            const PROGRAM_ID = new PublicKey("5AhkXaS77PEWP8pDdQx3SMDbEizqJFns6an8J42dXUuw");
+
+            const [adPDA] = PublicKey.findProgramAddressSync(
+                [Buffer.from("ad"), advertiserKey.toBuffer(), Buffer.from(adID)],
+                PROGRAM_ID
+            );
+            const [vaultPDA] = PublicKey.findProgramAddressSync(
+                [Buffer.from("vault"), advertiserKey.toBuffer(), Buffer.from(adID)],
+                PROGRAM_ID
+            );
+
+            const cpc = Number(ad.cost_per_click ?? 0);
+            const spentLamports = Math.round((analytics?.totalClicks ?? 0) * cpc * 1e9);
+            const withdrawableLamports = Math.max(0, (ad.RemainingAmount ?? 0) - spentLamports);
+
+            if (withdrawableLamports === 0) {
+                showToast("No withdrawable funds — remaining balance is reserved for publisher payouts");
+                setWithdrawing(false);
+                return;
+            }
+
+            const signature = await program.methods
+                .refund(new BN(withdrawableLamports))
+                .accounts({
+                    vault: vaultPDA,
+                    ad: adPDA,
+                    advertiserKey: advertiserKey,
+                    recipient: recipientPubkey,
+                    signer: wallet.publicKey,
+                    systemProgram: SystemProgram.programId,
+                })
+                .rpc();
+
+            const latestBlockhash = await walletConnection.getLatestBlockhash();
+            await walletConnection.confirmTransaction(
+                { signature, ...latestBlockhash },
+                'confirmed'
+            );
+
+            await fetch(`/api/crud/Advertiser/Advertiser-campaign/${id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    tx_signature: signature,
+                    publisher_wallet: withdrawAddress,
+                    total_amount: withdrawableLamports,
+                }),
+            });
+
+            await refreshData();
+
+            setShowWithdrawModal(false);
+            setWithdrawAddress('');
+            setWithdrawnAmount((withdrawableLamports / 1e9).toFixed(6));
+            setShowSuccessModal(true);
+        } catch (err: any) {
+            console.error("Withdrawal failed:", err);
+            if (err.message?.includes("Unauthorized")) {
+                showToast("Unauthorized: You must be the advertiser to withdraw funds");
+            } else if (err.message?.includes("InvalidAmount")) {
+                showToast("Invalid amount: Vault may be empty or below minimum rent");
+            } else if (err.message?.includes("User rejected")) {
+                showToast("Transaction rejected by wallet");
+            } else {
+                showToast(`Withdrawal failed: ${err.message || "Unknown error"}`);
+            }
+        } finally {
+            setWithdrawing(false);
+        }
+    };
 
     const showToast = (msg: string) => {
         setToast(msg);
@@ -351,7 +324,7 @@ const CampaignPage = () => {
         setDeleting(true);
         try {
             await fetch(`/api/crud/Advertiser/Advertiser-campaign/${id}`, { method: 'DELETE' });
-            router.push('Advertiser/Campaigns');
+            router.push('/Advertiser/Campaigns');
         } catch (err) {
             console.error("Delete failed:", err);
             showToast("Failed to delete campaign. Please try again.");
@@ -360,26 +333,26 @@ const CampaignPage = () => {
         }
     };
 
-   const handleDeleteClick = async () => {
-    if (!Wallet_Address || !ad?.id) return;
+    const handleDeleteClick = async () => {
+        if (!Wallet_Address || !ad?.id) return;
 
-    const res = await fetch(`/api/crud/Advertiser/Advertiser-campaign/${id}`);
-    const data = await res.json();
+        const res = await fetch(`/api/crud/Advertiser/Advertiser-campaign/${id}`);
+        const data = await res.json();
 
-    if (!data.ad) {
-        showToast("Failed to verify campaign state.");
-        return;
-    }
+        if (!data.ad) {
+            showToast("Failed to verify campaign state.");
+            return;
+        }
 
-    setAd(data.ad);
+        setAd(data.ad);
 
-    if (data.ad.AmountNull !== true) {
-        showToast("Withdraw remaining funds before deleting this campaign.");
-        return;
-    }
+        if (data.ad.AmountNull !== true) {
+            showToast("Withdraw remaining funds before deleting this campaign.");
+            return;
+        }
 
-    setShowDeleteModal(true);
-};
+        setShowDeleteModal(true);
+    };
     if (loading) return (
         <div className="flex h-screen bg-[#0a0a0a] items-center justify-center">
             <div className="w-5 h-5 border-2 border-gray-800 border-t-gray-400 rounded-full animate-spin" />
@@ -388,8 +361,8 @@ const CampaignPage = () => {
 
     const budgetUsedNum = analytics ? parseFloat(analytics.budgetUsed) : 0;
 
-    const remainingClicks = ad?.Clicks != null && analytics
-        ? Math.max(ad.Clicks - analytics.totalClicks, 0)
+    const remainingClicks = ad != null && analytics != null
+        ? (ad.AmountNull === true ? 0 : Math.max((ad.Clicks ?? 0) - analytics.totalClicks, 0))
         : null;
 
     const statCards = analytics ? [
@@ -819,8 +792,8 @@ const CampaignPage = () => {
                                         <span className="text-gray-300 tabular-nums">+{addClicksNum.toLocaleString()}</span>
                                     </div>
                                     <div className="flex justify-between text-[11px] mt-2">
-                                        <span className="text-gray-600">New max clicks</span>
-                                        <span className="text-gray-300 tabular-nums">{(ad?.Clicks ?? 0).toLocaleString()}</span>
+                                        <span className="text-gray-600">Remaining clicks</span>
+                                        <span className="text-gray-300 tabular-nums">{remainingClicks?.toLocaleString() ?? '—'}</span>
                                     </div>
                                 </div>
                                 <button
@@ -904,12 +877,12 @@ const CampaignPage = () => {
                                         </div>
                                         <div className="flex justify-between text-[11px]">
                                             <span className="text-gray-600">Platform fee (1%)</span>
-                                            <span className="text-gray-500 tabular-nums">−{(platformFee / 1e9).toFixed(6)} SOL</span>
+                                            <span className="text-gray-500 tabular-nums">+{(platformFee / 1e9).toFixed(6)} SOL</span>
                                         </div>
                                         <div className="border-t border-white/[0.04] pt-2.5 flex justify-between">
-                                            <span className="text-[11px] text-gray-500 font-medium">Net to vault</span>
+                                            <span className="text-[11px] text-gray-500 font-medium">You Pay</span>
                                             <span className="text-[11px] font-bold tabular-nums" style={{ color: accent }}>
-                                                {(netToVault / 1e9).toFixed(6)} SOL
+                                                {(totalWithFee / 1e9).toFixed(6)} SOL
                                             </span>
                                         </div>
                                     </div>
@@ -919,7 +892,7 @@ const CampaignPage = () => {
                                     <div className="flex items-center justify-between">
                                         <p className="text-[10px] text-gray-600 uppercase tracking-[0.15em]">You Pay</p>
                                         <p className="text-xl font-bold tabular-nums" style={{ color: accent }}>
-                                            {addFundsTotalSOL.toFixed(6)} SOL
+                                            {(totalWithFee / 1e9).toFixed(6)} SOL
                                         </p>
                                     </div>
                                     {!ad?.status && (
@@ -1014,14 +987,14 @@ const CampaignPage = () => {
                             <div className="flex gap-2 pt-1">
                                 <button
                                     onClick={() => { setShowWithdrawModal(false); setWithdrawAddress(''); }}
-                                    className="flex-1 py-2.5 rounded-lg text-xs text-gray-500 hover:text-gray-300 border border-white/[0.06] hover:border-white/[0.1] transition-all duration-150"
+                                    className="flex-1 cursor-pointer py-2.5 rounded-lg text-xs text-gray-500 hover:text-gray-300 border border-white/[0.06] hover:border-white/[0.1] transition-all duration-150"
                                 >
                                     Cancel
                                 </button>
                                 <button
                                     disabled={withdrawing || !withdrawAddress.trim()}
                                     onClick={Withdraw}
-                                    className="flex-1 py-2.5 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 transition-all duration-150 disabled:opacity-30 disabled:cursor-not-allowed"
+                                    className="flex-1 cursor-pointer py-2.5 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 transition-all duration-150 disabled:opacity-30 disabled:cursor-not-allowed"
                                     style={{ background: alpha(0.1), border: `1px solid ${alpha(0.3)}`, color: accent }}
                                     onMouseEnter={e => { if (!withdrawing && withdrawAddress.trim()) e.currentTarget.style.background = alpha(0.18); }}
                                     onMouseLeave={e => { e.currentTarget.style.background = alpha(0.1); }}
