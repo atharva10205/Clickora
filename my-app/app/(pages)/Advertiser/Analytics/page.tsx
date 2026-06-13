@@ -1,21 +1,20 @@
 'use client';
 
-import { Download } from 'lucide-react';
 import {
     LineChart, Line, XAxis, YAxis, CartesianGrid,
     Tooltip, ResponsiveContainer
 } from 'recharts';
 import Sidebar from '../Sidebar/Sidebar';
 import { useSession } from 'next-auth/react';
+import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-
 type AnalyticsData = {
-   summary: {
-    totalImpressions: number;
-    totalClicks: number;
-    ctr: number;
-    totalSpend: number;
-};
+    summary: {
+        totalImpressions: number;
+        totalClicks: number;
+        ctr: number;
+        totalSpend: number;
+    };
     chartData: { date: string; impressions: number; clicks: number }[];
     topSites: { name: string; impressions: number; clicks: number; ctr: number }[];
     accent: string;
@@ -38,8 +37,8 @@ const Analytics = () => {
         enabled: status === 'authenticated',
     });
 
-    const accent = data?.accent ?? '#FFFFFF';
-    const summary = data?.summary;
+    const [sidebarOpen, setSidebarOpen] = useState(false);
+    const accent = data?.accent ?? '#FFFFFF'; const summary = data?.summary;
     const chartData = data?.chartData ?? [];
     const topSites = data?.topSites ?? [];
     const maxClicks = Math.max(...topSites.map(s => s.clicks), 1);
@@ -67,11 +66,11 @@ const Analytics = () => {
     if (isLoading) {
         return (
             <div className="flex h-screen bg-[#0a0a0a] text-gray-200">
-                <Sidebar activeTab={activeTab} />
-                <main className="flex-1 p-8 overflow-auto">
+                <Sidebar activeTab={activeTab} isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+                <main className="flex-1 p-4 sm:p-8 overflow-auto">
                     <div className="animate-pulse space-y-4">
                         <div className="h-10 w-48 bg-[#111] rounded-xl" />
-                        <div className="grid grid-cols-4 gap-3">
+                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                             {[...Array(4)].map((_, i) => (
                                 <div key={i} className="h-28 bg-[#111] rounded-2xl border border-[#1a1a1a]" />
                             ))}
@@ -87,8 +86,8 @@ const Analytics = () => {
     if (error) {
         return (
             <div className="flex h-screen bg-[#0a0a0a] text-gray-200">
-                <Sidebar activeTab={activeTab} />
-                <main className="flex-1 p-8">
+                <Sidebar activeTab={activeTab} isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+                <main className="flex-1 p-4 sm:p-8">
                     <p className="text-red-500 text-sm">Error loading analytics. Please try again.</p>
                 </main>
             </div>
@@ -97,20 +96,33 @@ const Analytics = () => {
 
     return (
         <div className="flex h-screen bg-[#0a0a0a] text-gray-200">
-            <Sidebar activeTab={activeTab} />
+            {sidebarOpen && (
+                <div
+                    className="fixed inset-0 bg-black/60 z-20 lg:hidden"
+                    onClick={() => setSidebarOpen(false)}
+                />
+            )}
 
-            <main className="flex-1 p-6 overflow-y-auto font-mono">
+            <Sidebar activeTab={activeTab} isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
 
-                {/* Header */}
+            <main className="flex-1 p-4 sm:p-6 overflow-y-auto font-mono">
+
                 <div className="flex items-center justify-between mb-6">
-                    <div>
-                        <h1 className="text-xl font-semibold text-white">Analytics</h1>
-                        <p className="text-xs text-gray-600 mt-0.5">Campaign performance insights</p>
+                    <div className="flex items-center gap-3">
+                        <button
+                            onClick={() => setSidebarOpen(true)}
+                            className="lg:hidden flex flex-col gap-1 p-1.5 rounded-md hover:bg-[#161616] transition-colors"
+                        >
+                            <span className="w-4 h-px bg-gray-400" />
+                            <span className="w-4 h-px bg-gray-400" />
+                            <span className="w-4 h-px bg-gray-400" />
+                        </button>
+                        <div>
+                            <h1 className="text-lg sm:text-xl font-semibold text-white">Analytics</h1>
+                            <p className="text-xs text-gray-600 mt-0.5 hidden sm:block">Campaign performance insights</p>
+                        </div>
                     </div>
-                    <button className="px-4 py-2 rounded-lg text-xs font-semibold bg-[#0d0d0d] border border-[#1c1c1c] hover:bg-[#161616] flex items-center gap-2 text-gray-400 transition-colors">
-                        <Download className="w-3.5 h-3.5" />
-                        Export
-                    </button>
+                  
                 </div>
 
                 {/* Summary Cards */}
@@ -118,12 +130,12 @@ const Analytics = () => {
                     {summaryCards.map((item) => (
                         <div
                             key={item.metric}
-                            className="bg-[#0d0d0d] border border-[#1c1c1c] p-5 rounded-2xl"
+                            className="bg-[#0d0d0d] border border-[#1c1c1c] p-3 sm:p-5 rounded-2xl"
                         >
-                            <p className="text-xs text-gray-600 mb-2">{item.metric}</p>
+                            <p className="text-xs text-gray-600 mb-1 sm:mb-2">{item.metric}</p>
                             <p
-                                className="text-2xl font-semibold tabular-nums"
-                               style={{ color: item.metric === 'Total Spend' ? accent : 'white' }}
+                                className="text-lg sm:text-2xl font-semibold tabular-nums"
+                                style={{ color: item.metric === 'Total Spend' ? accent : 'white' }}
                             >
                                 {item.value}
                             </p>
@@ -149,46 +161,45 @@ const Analytics = () => {
                         </div>
                     </div>
 
-                    <ResponsiveContainer width="100%" height={260}>
-                        <LineChart data={chartData}>
-                            <CartesianGrid strokeDasharray="3 3" stroke="#161616" />
-                            <XAxis
-                                dataKey="date"
-                                stroke="#2a2a2a"
-                                tick={{ fill: '#444', fontSize: 10, fontFamily: 'monospace' }}
-                                tickFormatter={d => {
-                                    const date = new Date(d);
-                                    return `${date.getMonth() + 1}/${date.getDate()}`;
-                                }}
-                            />
-                            <YAxis
-                                stroke="#2a2a2a"
-                                tick={{ fill: '#444', fontSize: 10 }}
-                                tickFormatter={v => v >= 1000 ? `${(v / 1000).toFixed(0)}K` : v}
-                            />
-                            <Tooltip
-                                contentStyle={{
-                                    backgroundColor: '#111',
-                                    border: '1px solid #222',
-                                    borderRadius: '8px',
-                                    color: '#e5e7eb',
-                                    fontSize: '11px',
-                                    fontFamily: 'monospace'
-                                }}
-                                labelFormatter={d => {
-                                    const date = new Date(d);
-                                    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-                                }}
-                            />
-                            <Line
-                                type="monotone"
-                                dataKey="clicks"
-                                stroke={accent}
-                                strokeWidth={1.5}
-                                dot={false}
-                                activeDot={{ r: 4, fill: accent }}
-                            />
-                        </LineChart>
+                    <ResponsiveContainer width="100%" height={200}>                        <LineChart data={chartData}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="#161616" />
+                        <XAxis
+                            dataKey="date"
+                            stroke="#2a2a2a"
+                            tick={{ fill: '#444', fontSize: 10, fontFamily: 'monospace' }}
+                            tickFormatter={d => {
+                                const date = new Date(d);
+                                return `${date.getMonth() + 1}/${date.getDate()}`;
+                            }}
+                        />
+                        <YAxis
+                            stroke="#2a2a2a"
+                            tick={{ fill: '#444', fontSize: 10 }}
+                            tickFormatter={v => v >= 1000 ? `${(v / 1000).toFixed(0)}K` : v}
+                        />
+                        <Tooltip
+                            contentStyle={{
+                                backgroundColor: '#111',
+                                border: '1px solid #222',
+                                borderRadius: '8px',
+                                color: '#e5e7eb',
+                                fontSize: '11px',
+                                fontFamily: 'monospace'
+                            }}
+                            labelFormatter={d => {
+                                const date = new Date(d);
+                                return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+                            }}
+                        />
+                        <Line
+                            type="monotone"
+                            dataKey="clicks"
+                            stroke={accent}
+                            strokeWidth={1.5}
+                            dot={false}
+                            activeDot={{ r: 4, fill: accent }}
+                        />
+                    </LineChart>
                     </ResponsiveContainer>
                 </div>
 
@@ -202,16 +213,15 @@ const Analytics = () => {
                             {topSites.map((site) => (
                                 <div key={site.name}>
                                     <div className="flex items-center justify-between mb-2">
-                                        <span className="text-sm text-gray-300 truncate max-w-[200px]">
-                                            {site.name}
+                                        <span className="text-sm text-gray-300 truncate max-w-[120px] sm:max-w-[200px]">                                            {site.name}
                                         </span>
-                                        <div className="flex items-center gap-4 text-xs text-gray-500 tabular-nums flex-shrink-0 ml-4">
-                                            <span>
+                                        <div className="flex items-center gap-2 sm:gap-4 text-xs text-gray-500 tabular-nums flex-shrink-0 ml-2">
+                                            <span className="hidden sm:inline">
                                                 {site.impressions >= 1000
                                                     ? `${(site.impressions / 1000).toFixed(1)}K`
                                                     : site.impressions} impr
                                             </span>
-                                            <span>{site.clicks} clicks</span>
+                                            <span className="hidden sm:inline">{site.clicks} clicks</span>
                                             <span style={{ color: accent }}>{site.ctr}% CTR</span>
                                         </div>
                                     </div>

@@ -17,13 +17,15 @@ const PALETTE = [
 const Settings = () => {
     const activeTab = 'Settings';
     const [isSwitching, setIsSwitching] = useState(false);
-    const [userName, setUserName] = useState("");
-    const [userEmail, setUserEmail] = useState("");
+    const [userName, setUserName] = useState('');
+    const [userEmail, setUserEmail] = useState('');
     const [accent, setAccent] = useState('#FFFFFF');
     const [savingAccent, setSavingAccent] = useState(false);
     const [accentSaved, setAccentSaved] = useState(false);
     const [showDeleteModal, setShowDeleteModal] = useState(false);
-    const [deleteEmailInput, setDeleteEmailInput] = useState("");
+    const [deleteEmailInput, setDeleteEmailInput] = useState('');
+    const [sidebarOpen, setSidebarOpen] = useState(false);
+    const [copied, setCopied] = useState(false);
     const ACCENT = accent;
 
     const hAlpha = (op: number) => {
@@ -36,7 +38,7 @@ const Settings = () => {
     const session = useSession();
     const sessionRole = (session?.data?.user as { role?: string })?.role as 'advertiser' | 'publisher' | undefined;
     const [currentRole, setCurrentRole] = useState<'advertiser' | 'publisher'>(sessionRole ?? 'advertiser');
-    const [WalletAddress, setWalletAddress] = useState("");
+    const [WalletAddress, setWalletAddress] = useState('');
 
     useEffect(() => {
         if (sessionRole) setCurrentRole(sessionRole);
@@ -44,11 +46,11 @@ const Settings = () => {
 
     useEffect(() => {
         const get_user_data = async () => {
-            const res = await fetch("/api/crud/Publisher/Settings");
+            const res = await fetch('/api/crud/Publisher/Settings');
             const data = await res.json();
             if (data?.res) {
-                setUserName(data.res.name ?? "");
-                setUserEmail(data.res.email ?? "");
+                setUserName(data.res.name ?? '');
+                setUserEmail(data.res.email ?? '');
                 setAccent(data.res.accent ?? '#FFFFFF');
             }
             if (data?.WalletAddress) {
@@ -59,20 +61,19 @@ const Settings = () => {
     }, []);
 
     const handleSaveProfile = async () => {
-        const res = await fetch("/api/crud/Publisher/Settings", {
-            method: "POST",
+        await fetch('/api/crud/Publisher/Settings', {
+            method: 'POST',
             body: JSON.stringify({ name: userName, email: userEmail }),
         });
-        const data = await res.json();
     };
 
     const handleRoleSwitch = async (newRole: 'advertiser' | 'publisher') => {
         if (newRole === currentRole) return;
         setIsSwitching(true);
         try {
-            const res = await fetch("/api/crud/role_update", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
+            const res = await fetch('/api/crud/role_update', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ role: newRole }),
             });
             if (res.ok) {
@@ -87,40 +88,44 @@ const Settings = () => {
     };
 
     const handleSaveWallet = async () => {
-        const res = await fetch("/api/crud/Publisher/Settings", {
-            method: "PATCH",
+        await fetch('/api/crud/Publisher/Settings', {
+            method: 'PATCH',
             body: JSON.stringify({ wallet_address: WalletAddress }),
         });
-        const data = await res.json();
     };
 
     const handleSaveAccent = async (color: string) => {
         setSavingAccent(true);
         setAccent(color);
         try {
-            await fetch("/api/crud/Publisher/Settings", {
-                method: "PUT",
-                headers: { "Content-Type": "application/json" },
+            await fetch('/api/crud/Publisher/Settings', {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ accent: color }),
             });
             setAccentSaved(true);
             setTimeout(() => setAccentSaved(false), 2000);
         } catch (err) {
-            console.error("Failed to save accent", err);
+            console.error('Failed to save accent', err);
         } finally {
             setSavingAccent(false);
         }
     };
 
     const handleDeleteAccount = async () => {
-        // deletion logic to be added
-        console.log("delete account");
+        console.log('delete account');
+    };
+
+    const handleCopy = () => {
+        navigator.clipboard.writeText(WalletAddress);
+        setCopied(true);
+        setTimeout(() => setCopied(false), 1800);
     };
 
     const SaveBtn = ({ onClick, label }: { onClick: () => void; label: string }) => (
         <button
             onClick={onClick}
-            className="px-6 py-2.5 rounded-xl font-mono cursor-pointer bg-[#161616] text-gray-200 text-sm font-semibold hover:-translate-y-0.5 active:translate-y-0 transition-all duration-200"
+            className="px-5 py-2.5 rounded-xl font-mono cursor-pointer bg-[#161616] text-gray-200 text-sm font-semibold hover:-translate-y-0.5 active:translate-y-0 active:scale-95 transition-all duration-200"
             style={{ border: `1px solid ${alpha(0.18)}` }}
             onMouseEnter={e => {
                 e.currentTarget.style.borderColor = ACCENT;
@@ -140,91 +145,146 @@ const Settings = () => {
     const emailMatches = deleteEmailInput.trim().toLowerCase() === userEmail.trim().toLowerCase();
 
     return (
-        <div className="flex h-screen bg-[#0a0a0a] text-gray-300">
-            <Sidebar activeTab={activeTab} accent={accent} />
+        <div className="flex h-screen bg-[#0a0a0a] text-gray-300 overflow-hidden">
 
-            <main className="flex-1 p-8 overflow-y-auto">
-                <div className="max-w-6xl">
+            {/* Sidebar overlay for mobile */}
+            {sidebarOpen && (
+                <div
+                    className="fixed inset-0 bg-black/60 z-20 lg:hidden"
+                    onClick={() => setSidebarOpen(false)}
+                />
+            )}
 
-                    <div className="mb-10">
-                        <h1 className="text-3xl font-bold mb-1 font-mono text-white tracking-tight">Settings</h1>
-                        <p className="text-gray-600 font-mono text-sm">Manage your publisher account</p>
+            <Sidebar
+                activeTab={activeTab}
+                accent={accent}
+                isOpen={sidebarOpen}
+                onClose={() => setSidebarOpen(false)}
+            />
+
+            {/* Main scroll area */}
+            <main className="flex-1 overflow-y-auto">
+                <div className="max-w-3xl mx-auto px-3 sm:px-6 lg:px-8 py-5 sm:py-8">
+
+                    {/* Page header */}
+                    <div className="mb-6 sm:mb-10 flex items-center gap-3">
+                        {/* Hamburger — mobile only */}
+                        <button
+                            onClick={() => setSidebarOpen(true)}
+                            className="lg:hidden flex flex-col gap-[5px] p-2 rounded-md hover:bg-[#161616] transition-colors shrink-0"
+                            aria-label="Open menu"
+                        >
+                            <span className="w-4 h-px bg-gray-400" />
+                            <span className="w-4 h-px bg-gray-400" />
+                            <span className="w-4 h-px bg-gray-400" />
+                        </button>
+                        <div>
+                            <h1 className="text-xl sm:text-3xl font-bold font-mono text-white tracking-tight">Settings</h1>
+                            <p className="text-gray-600 font-mono text-xs sm:text-sm hidden sm:block mt-0.5">
+                                Manage your publisher account
+                            </p>
+                        </div>
                     </div>
 
-                    <div className="grid gap-5">
+                    <div className="grid gap-4 sm:gap-5">
 
+                        {/* ── Account Role ── */}
                         <div className="bg-[#111111] border border-gray-800/70 rounded-xl overflow-hidden">
-                            <div className="px-6 py-5 border-b border-gray-800/60 flex items-center gap-3">
-                                <div className="p-2 rounded-lg bg-[#161616] border border-gray-800/60">
+                            <div className="px-4 sm:px-6 py-4 sm:py-5 border-b border-gray-800/60 flex items-center gap-3">
+                                <div className="p-2 rounded-lg bg-[#161616] border border-gray-800/60 shrink-0">
                                     <RefreshCw className="w-4 h-4 text-gray-400" />
                                 </div>
                                 <div>
-                                    <h2 className="text-sm font-semibold text-gray-200 font-mono uppercase tracking-widest">Account Role</h2>
-                                    <p className="text-xs text-gray-600 font-mono mt-0.5">Switch between Advertiser and Publisher</p>
+                                    <h2 className="text-sm font-semibold text-gray-200 font-mono uppercase tracking-widest">
+                                        Account Role
+                                    </h2>
+                                    <p className="text-xs text-gray-600 font-mono mt-0.5 hidden sm:block">
+                                        Switch between Advertiser and Publisher
+                                    </p>
                                 </div>
                             </div>
-                            <div className="p-6">
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+                            <div className="p-4 sm:p-6">
+                                <div className="grid grid-cols-2 gap-2 sm:gap-3">
+
+                                    {/* Advertiser card */}
                                     <button
                                         onClick={() => handleRoleSwitch('advertiser')}
                                         disabled={isSwitching}
-                                        className="relative p-6 rounded-xl font-mono text-left transition-all duration-200 hover:-translate-y-0.5"
+                                        className="relative p-3 sm:p-5 rounded-xl font-mono text-left transition-all duration-200 hover:-translate-y-0.5 active:scale-[0.98]"
                                         style={{
                                             background: '#0d0d0d',
-                                            border: `1px solid ${currentRole === 'advertiser' ? ACCENT : alpha(0.15)}`,
+                                            border: `1px solid ${currentRole === 'advertiser' ? ACCENT : alpha(0.12)}`,
                                             boxShadow: currentRole === 'advertiser' ? `0 0 24px ${hAlpha(0.12)}` : 'none',
                                             opacity: isSwitching ? 0.5 : 1,
                                             cursor: isSwitching ? 'not-allowed' : 'pointer',
                                         }}
-                                        onMouseEnter={e => { if (currentRole !== 'advertiser') (e.currentTarget as HTMLElement).style.borderColor = alpha(0.2); }}
-                                        onMouseLeave={e => { if (currentRole !== 'advertiser') (e.currentTarget as HTMLElement).style.borderColor = alpha(0.08); }}
+                                        onMouseEnter={e => {
+                                            if (currentRole !== 'advertiser')
+                                                (e.currentTarget as HTMLElement).style.borderColor = alpha(0.2);
+                                        }}
+                                        onMouseLeave={e => {
+                                            if (currentRole !== 'advertiser')
+                                                (e.currentTarget as HTMLElement).style.borderColor = alpha(0.12);
+                                        }}
                                     >
                                         {currentRole === 'advertiser' && (
-                                            <div className="absolute top-3 right-3 w-5 h-5 rounded-full bg-white flex items-center justify-center">
-                                                <svg className="w-3 h-3 text-black" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <div className="absolute top-2 right-2 sm:top-3 sm:right-3 w-4 h-4 sm:w-5 sm:h-5 rounded-full bg-white flex items-center justify-center">
+                                                <svg className="w-2.5 h-2.5 sm:w-3 sm:h-3 text-black" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
                                                 </svg>
                                             </div>
                                         )}
-                                        <div className="flex items-start gap-4">
-                                            <div className="p-2.5 rounded-lg bg-[#161616] border border-gray-800/60">
-                                                <Target className="w-5 h-5 text-gray-400" />
+                                        <div className="flex flex-col gap-2 sm:gap-3">
+                                            <div className="p-2 rounded-lg bg-[#161616] border border-gray-800/60 w-fit">
+                                                <Target className="w-4 h-4 sm:w-5 sm:h-5 text-gray-400" />
                                             </div>
                                             <div>
-                                                <h3 className="text-base font-semibold text-white mb-1">Advertiser</h3>
-                                                <p className="text-xs text-gray-600">Create ads, set budgets, and track campaign performance</p>
+                                                <h3 className="text-xs sm:text-sm font-semibold text-white mb-0.5 sm:mb-1">Advertiser</h3>
+                                                <p className="text-[10px] sm:text-xs text-gray-600 hidden sm:block leading-relaxed">
+                                                    Create ads, set budgets, and track campaign performance
+                                                </p>
                                             </div>
                                         </div>
                                     </button>
 
+                                    {/* Publisher card */}
                                     <button
                                         onClick={() => handleRoleSwitch('publisher')}
                                         disabled={isSwitching}
-                                        className="relative p-6 rounded-xl text-left font-mono transition-all duration-200 hover:-translate-y-0.5"
+                                        className="relative p-3 sm:p-5 rounded-xl font-mono text-left transition-all duration-200 hover:-translate-y-0.5 active:scale-[0.98]"
                                         style={{
                                             background: '#0d0d0d',
-                                            border: `1px solid ${currentRole === 'publisher' ? ACCENT : alpha(0.15)}`,
+                                            border: `1px solid ${currentRole === 'publisher' ? ACCENT : alpha(0.12)}`,
                                             boxShadow: currentRole === 'publisher' ? `0 0 24px ${hAlpha(0.12)}` : 'none',
                                             opacity: isSwitching ? 0.5 : 1,
                                             cursor: isSwitching ? 'not-allowed' : 'pointer',
                                         }}
-                                        onMouseEnter={e => { if (currentRole !== 'publisher') (e.currentTarget as HTMLElement).style.borderColor = alpha(0.2); }}
-                                        onMouseLeave={e => { if (currentRole !== 'publisher') (e.currentTarget as HTMLElement).style.borderColor = alpha(0.08); }}
+                                        onMouseEnter={e => {
+                                            if (currentRole !== 'publisher')
+                                                (e.currentTarget as HTMLElement).style.borderColor = alpha(0.2);
+                                        }}
+                                        onMouseLeave={e => {
+                                            if (currentRole !== 'publisher')
+                                                (e.currentTarget as HTMLElement).style.borderColor = alpha(0.12);
+                                        }}
                                     >
                                         {currentRole === 'publisher' && (
-                                            <div className="absolute top-3 right-3 w-5 h-5 rounded-full bg-white flex items-center justify-center">
-                                                <svg className="w-3 h-3 text-black" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <div className="absolute top-2 right-2 sm:top-3 sm:right-3 w-4 h-4 sm:w-5 sm:h-5 rounded-full bg-white flex items-center justify-center">
+                                                <svg className="w-2.5 h-2.5 sm:w-3 sm:h-3 text-black" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
                                                 </svg>
                                             </div>
                                         )}
-                                        <div className="flex items-start gap-4">
-                                            <div className="p-2.5 rounded-lg bg-[#161616] border border-gray-800/60">
-                                                <TrendingUp className="w-5 h-5 text-gray-400" />
+                                        <div className="flex flex-col gap-2 sm:gap-3">
+                                            <div className="p-2 rounded-lg bg-[#161616] border border-gray-800/60 w-fit">
+                                                <TrendingUp className="w-4 h-4 sm:w-5 sm:h-5 text-gray-400" />
                                             </div>
                                             <div>
-                                                <h3 className="text-base font-semibold text-white mb-1">Publisher</h3>
-                                                <p className="text-xs text-gray-600">Display ads on your site and earn revenue from clicks</p>
+                                                <h3 className="text-xs sm:text-sm font-semibold text-white mb-0.5 sm:mb-1">Publisher</h3>
+                                                <p className="text-[10px] sm:text-xs text-gray-600 hidden sm:block leading-relaxed">
+                                                    Display ads on your site and earn revenue from clicks
+                                                </p>
                                             </div>
                                         </div>
                                     </button>
@@ -237,39 +297,47 @@ const Settings = () => {
                                     </div>
                                 )}
 
-                                <div className="mt-4 p-4 bg-[#0d0d0d] border border-gray-800/50 rounded-lg">
-                                    <p className="text-xs text-gray-600">
-                                        <span className="text-gray-400 font-medium">Note:</span> Switching roles will redirect you to the appropriate dashboard. Your data will be preserved.
+                                <div className="mt-3 sm:mt-4 p-3 sm:p-4 bg-[#0d0d0d] border border-gray-800/50 rounded-lg">
+                                    <p className="text-xs text-gray-600 leading-relaxed">
+                                        <span className="text-gray-400 font-medium">Note:</span>{' '}
+                                        Switching roles redirects you to the appropriate dashboard. Your data is preserved.
                                     </p>
                                 </div>
                             </div>
                         </div>
 
+                        {/* ── Profile Settings ── */}
                         <div className="bg-[#111111] border border-gray-800/70 rounded-xl overflow-hidden">
-                            <div className="px-6 py-5 border-b border-gray-800/60 flex items-center gap-3">
-                                <div className="p-2 rounded-lg bg-[#161616] border border-gray-800/60">
+                            <div className="px-4 sm:px-6 py-4 sm:py-5 border-b border-gray-800/60 flex items-center gap-3">
+                                <div className="p-2 rounded-lg bg-[#161616] border border-gray-800/60 shrink-0">
                                     <User className="w-4 h-4 text-gray-400" />
                                 </div>
-                                <h2 className="text-sm font-semibold text-gray-200 uppercase tracking-widest">Profile Settings</h2>
+                                <h2 className="text-sm font-semibold text-gray-200 uppercase tracking-widest font-mono">
+                                    Profile Settings
+                                </h2>
                             </div>
-                            <div className="p-6 space-y-4">
+                            <div className="p-4 sm:p-6 space-y-4">
                                 <div>
-                                    <label className="text-xs text-gray-600 uppercase tracking-widest mb-2 block">Publisher Name</label>
+                                    <label className="text-xs text-gray-600 uppercase tracking-widest mb-2 block">
+                                        Publisher Name
+                                    </label>
                                     <input
                                         type="text"
                                         value={userName}
-                                        onChange={(e) => setUserName(e.target.value)}
+                                        onChange={e => setUserName(e.target.value)}
                                         className="w-full bg-[#0d0d0d] border border-gray-800/60 rounded-lg px-4 py-3 text-sm text-gray-200 placeholder-gray-700 font-mono focus:outline-none transition-colors duration-150"
                                         onFocus={e => e.currentTarget.style.borderColor = ACCENT}
                                         onBlur={e => e.currentTarget.style.borderColor = 'rgba(255,255,255,0.08)'}
                                     />
                                 </div>
                                 <div>
-                                    <label className="text-xs text-gray-600 uppercase tracking-widest mb-2 block">Email Address</label>
+                                    <label className="text-xs text-gray-600 uppercase tracking-widest mb-2 block">
+                                        Email Address
+                                    </label>
                                     <input
                                         type="email"
                                         value={userEmail}
-                                        onChange={(e) => setUserEmail(e.target.value)}
+                                        onChange={e => setUserEmail(e.target.value)}
                                         className="w-full bg-[#0d0d0d] border border-gray-800/60 rounded-lg px-4 py-3 text-sm text-gray-200 placeholder-gray-700 font-mono focus:outline-none transition-colors duration-150"
                                         onFocus={e => e.currentTarget.style.borderColor = ACCENT}
                                         onBlur={e => e.currentTarget.style.borderColor = 'rgba(255,255,255,0.08)'}
@@ -279,30 +347,39 @@ const Settings = () => {
                             </div>
                         </div>
 
+                        {/* ── Payment Settings ── */}
                         <div className="bg-[#111111] border border-gray-800/70 rounded-xl overflow-hidden">
-                            <div className="px-6 py-5 border-b border-gray-800/60 flex items-center gap-3">
-                                <div className="p-2 rounded-lg bg-[#161616] border border-gray-800/60">
+                            <div className="px-4 sm:px-6 py-4 sm:py-5 border-b border-gray-800/60 flex items-center gap-3">
+                                <div className="p-2 rounded-lg bg-[#161616] border border-gray-800/60 shrink-0">
                                     <Wallet className="w-4 h-4 text-gray-400" />
                                 </div>
-                                <h2 className="text-sm font-semibold text-gray-200 uppercase tracking-widest">Payment Settings</h2>
+                                <h2 className="text-sm font-semibold text-gray-200 uppercase tracking-widest font-mono">
+                                    Payment Settings
+                                </h2>
                             </div>
-                            <div className="p-6 space-y-4">
+                            <div className="p-4 sm:p-6 space-y-4">
                                 <div>
-                                    <label className="text-xs text-gray-600 uppercase tracking-widest mb-2 block">Payout Wallet Address</label>
-                                    <div className="flex gap-3">
+                                    <label className="text-xs text-gray-600 uppercase tracking-widest mb-2 block">
+                                        Payout Wallet Address
+                                    </label>
+                                    <div className="flex gap-2">
                                         <input
                                             type="text"
                                             value={WalletAddress}
-                                            onChange={(e) => setWalletAddress(e.target.value)}
-                                            className="flex-1 bg-[#0d0d0d] border border-gray-800/60 rounded-lg px-4 py-3 font-mono text-sm text-gray-200 placeholder-gray-700 focus:outline-none transition-colors duration-150"
+                                            onChange={e => setWalletAddress(e.target.value)}
+                                            className="flex-1 min-w-0 bg-[#0d0d0d] border border-gray-800/60 rounded-lg px-3 sm:px-4 py-3 font-mono text-xs sm:text-sm text-gray-200 placeholder-gray-700 focus:outline-none transition-colors duration-150"
                                             onFocus={e => e.currentTarget.style.borderColor = ACCENT}
                                             onBlur={e => e.currentTarget.style.borderColor = 'rgba(255,255,255,0.08)'}
                                         />
                                         <button
-                                            className="px-4 rounded-lg bg-[#161616] border border-gray-800/60 text-gray-500 hover:text-gray-200 hover:border-gray-600 transition-all duration-150"
-                                            onClick={() => navigator.clipboard.writeText(WalletAddress)}
+                                            onClick={handleCopy}
+                                            className="shrink-0 w-11 flex items-center justify-center rounded-lg bg-[#161616] border border-gray-800/60 text-gray-500 hover:text-gray-200 hover:border-gray-600 transition-all duration-150 active:scale-95"
+                                            title="Copy address"
                                         >
-                                            <Copy className="w-4 h-4" />
+                                            {copied
+                                                ? <Check className="w-4 h-4 text-green-400" />
+                                                : <Copy className="w-4 h-4" />
+                                            }
                                         </button>
                                     </div>
                                 </div>
@@ -310,41 +387,52 @@ const Settings = () => {
                             </div>
                         </div>
 
+                        {/* ── Accent Colour ── */}
                         <div className="bg-[#111111] border border-gray-800/70 rounded-xl overflow-hidden">
-                            <div className="px-6 py-5 border-b border-gray-800/60 flex items-center justify-between">
-                                <div className="flex items-center gap-3">
-                                    <div className="p-2 rounded-lg bg-[#161616] border border-gray-800/60">
+                            <div className="px-4 sm:px-6 py-4 sm:py-5 border-b border-gray-800/60 flex items-center justify-between gap-3">
+                                <div className="flex items-center gap-3 min-w-0">
+                                    <div className="p-2 rounded-lg bg-[#161616] border border-gray-800/60 shrink-0">
                                         <Palette className="w-4 h-4 text-gray-400" />
                                     </div>
                                     <div>
-                                        <h2 className="text-sm font-semibold text-gray-200 font-mono uppercase tracking-widest">Accent Colour</h2>
-                                        <p className="text-xs text-gray-600 font-mono mt-0.5">Choose your dashboard highlight colour</p>
+                                        <h2 className="text-sm font-semibold text-gray-200 font-mono uppercase tracking-widest">
+                                            Accent Colour
+                                        </h2>
+                                        <p className="text-xs text-gray-600 font-mono mt-0.5 hidden sm:block">
+                                            Choose your dashboard highlight colour
+                                        </p>
                                     </div>
                                 </div>
-                                <div className="flex items-center gap-2.5">
+                                {/* Live preview chip */}
+                                <div className="flex items-center gap-2 shrink-0">
                                     {accentSaved && (
                                         <span className="text-xs text-gray-400 font-mono flex items-center gap-1">
-                                            <Check className="w-3 h-3" /> Saved
+                                            <Check className="w-3 h-3" />
+                                            <span className="hidden sm:inline">Saved</span>
                                         </span>
                                     )}
-                                    <div className="w-5 h-5 rounded border border-gray-700" style={{ background: ACCENT }} />
-                                    <span className="text-xs text-gray-500 font-mono">{ACCENT}</span>
+                                    <div
+                                        className="w-5 h-5 rounded border border-gray-700"
+                                        style={{ background: ACCENT }}
+                                    />
+                                    <span className="text-xs text-gray-500 font-mono hidden sm:inline">{ACCENT}</span>
                                 </div>
                             </div>
-                            <div className="p-6">
-                                <div className="flex flex-wrap gap-3">
-                                    {PALETTE.map((color) => {
+                            <div className="p-4 sm:p-6">
+                                {/* Colour grid — wraps naturally, bigger touch targets on mobile */}
+                                <div className="flex flex-wrap gap-2 sm:gap-3">
+                                    {PALETTE.map(color => {
                                         const isSelected = ACCENT.toLowerCase() === color.toLowerCase();
                                         return (
                                             <button
                                                 key={color}
                                                 onClick={() => handleSaveAccent(color)}
                                                 disabled={savingAccent}
-                                                className="flex flex-col items-center gap-1 group"
+                                                className="flex flex-col items-center gap-1 group active:scale-95 transition-transform"
                                                 title={color}
                                             >
                                                 <div
-                                                    className="w-9 h-9 rounded-md relative transition-all duration-150"
+                                                    className="w-8 h-8 sm:w-9 sm:h-9 rounded-md relative transition-all duration-150"
                                                     style={{
                                                         background: color,
                                                         outline: isSelected ? `2px solid ${color}` : '2px solid transparent',
@@ -355,11 +443,16 @@ const Settings = () => {
                                                 >
                                                     {isSelected && (
                                                         <div className="absolute inset-0 flex items-center justify-center">
-                                                            <Check className="w-3.5 h-3.5 text-black" strokeWidth={3} />
+                                                            <Check
+                                                                className="w-3 h-3 sm:w-3.5 sm:h-3.5"
+                                                                style={{ color: color === '#FFFFFF' ? '#000' : '#000' }}
+                                                                strokeWidth={3}
+                                                            />
                                                         </div>
                                                     )}
                                                 </div>
-                                                <span className="text-[9px] text-gray-700 font-mono group-hover:text-gray-400 transition-colors">
+                                                {/* Hex label — hidden on tiny screens to avoid clutter */}
+                                                <span className="text-[9px] text-gray-700 font-mono group-hover:text-gray-400 transition-colors hidden sm:block">
                                                     {color}
                                                 </span>
                                             </button>
@@ -369,15 +462,18 @@ const Settings = () => {
                             </div>
                         </div>
 
+                        {/* ── Sign Out ── */}
                         <div className="bg-[#111111] border border-gray-800/70 rounded-xl overflow-hidden">
-                            <div className="p-6 flex items-center justify-between">
-                                <div>
+                            <div className="p-4 sm:p-6 flex items-center justify-between gap-3">
+                                <div className="min-w-0">
                                     <p className="text-sm text-gray-300 font-medium">Sign Out</p>
-                                    <p className="text-xs text-gray-600 mt-0.5">Sign out of your account on this device</p>
+                                    <p className="text-xs text-gray-600 mt-0.5 hidden sm:block">
+                                        Sign out of your account on this device
+                                    </p>
                                 </div>
                                 <button
                                     onClick={() => signOut({ callbackUrl: '/' })}
-                                    className="flex cursor-pointer items-center gap-2 px-4 py-2.5 rounded-lg bg-[#161616] border border-gray-800/60 text-gray-300 text-sm font-semibold hover:border-gray-600 hover:text-white transition-all duration-150"
+                                    className="shrink-0 flex cursor-pointer items-center gap-2 px-3 sm:px-4 py-2.5 rounded-lg bg-[#161616] border border-gray-800/60 text-gray-300 text-sm font-semibold hover:border-gray-600 hover:text-white transition-all duration-150 active:scale-95 whitespace-nowrap"
                                 >
                                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
@@ -387,26 +483,33 @@ const Settings = () => {
                             </div>
                         </div>
 
-                        <div className="bg-[#111111] border border-red-900/30 rounded-xl overflow-hidden">                            <div className="px-6 py-5 border-b border-red-900/20 flex items-center gap-3">
-                            <div className="p-2 rounded-lg bg-red-950/40 border border-red-900/30">
-                                <AlertTriangle className="w-4 h-4 text-red-500" />
-                            </div>
-                            <div>
-                                <h2 className="text-sm font-semibold text-red-400 uppercase tracking-widest">Danger Zone</h2>
-                                <p className="text-xs text-gray-600 mt-0.5">Irreversible actions — proceed with caution</p>
-                            </div>
-                        </div>
-                            <div className="p-6 flex items-center justify-between">
+                        {/* ── Danger Zone ── */}
+                        <div className="bg-[#111111] border border-red-900/30 rounded-xl overflow-hidden">
+                            <div className="px-4 sm:px-6 py-4 sm:py-5 border-b border-red-900/20 flex items-center gap-3">
+                                <div className="p-2 rounded-lg bg-red-950/40 border border-red-900/30 shrink-0">
+                                    <AlertTriangle className="w-4 h-4 text-red-500" />
+                                </div>
                                 <div>
+                                    <h2 className="text-sm font-semibold text-red-400 uppercase tracking-widest">Danger Zone</h2>
+                                    <p className="text-xs text-gray-600 mt-0.5 hidden sm:block">
+                                        Irreversible actions — proceed with caution
+                                    </p>
+                                </div>
+                            </div>
+                            <div className="p-4 sm:p-6 flex items-center justify-between gap-3">
+                                <div className="min-w-0">
                                     <p className="text-sm text-gray-300 font-medium">Delete Account</p>
-                                    <p className="text-xs text-gray-600 mt-0.5">Permanently delete your account and all associated data</p>
+                                    <p className="text-xs text-gray-600 mt-0.5 hidden sm:block">
+                                        Permanently delete your account and all associated data
+                                    </p>
                                 </div>
                                 <button
                                     onClick={() => setShowDeleteModal(true)}
-                                    className="flex items-center gap-2 px-4 py-2.5 rounded-lg bg-red-950/40 border border-red-900/40 text-red-400 text-sm font-semibold hover:bg-red-950/70 hover:border-red-800/60 transition-all duration-150"
+                                    className="shrink-0 flex items-center gap-2 px-3 sm:px-4 py-2.5 rounded-lg bg-red-950/40 border border-red-900/40 text-red-400 text-sm font-semibold hover:bg-red-950/70 hover:border-red-800/60 transition-all duration-150 active:scale-95 whitespace-nowrap"
                                 >
                                     <Trash2 className="w-4 h-4" />
-                                    Delete Account
+                                    <span className="hidden sm:inline">Delete Account</span>
+                                    <span className="sm:hidden">Delete</span>
                                 </button>
                             </div>
                         </div>
@@ -415,44 +518,53 @@ const Settings = () => {
                 </div>
             </main>
 
+            {/* ── Delete Account Modal ── */}
             {showDeleteModal && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center">
+                <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center px-3 pb-3 sm:pb-0 sm:px-4">
+                    {/* Backdrop */}
                     <div
                         className="absolute inset-0 bg-black/70 backdrop-blur-sm"
-                        onClick={() => { setShowDeleteModal(false); setDeleteEmailInput(""); }}
+                        onClick={() => { setShowDeleteModal(false); setDeleteEmailInput(''); }}
                     />
 
-                    <div className="relative z-10 bg-[#111111] border border-red-900/40 rounded-xl w-full max-w-md mx-4 p-6 shadow-2xl">
+                    {/* Panel — slides up from bottom on mobile */}
+                    <div className="relative z-10 bg-[#111111] border border-red-900/40 rounded-2xl w-full sm:max-w-md p-5 sm:p-6 shadow-2xl">
 
+                        {/* Close */}
                         <button
-                            onClick={() => { setShowDeleteModal(false); setDeleteEmailInput(""); }}
-                            className="absolute top-4 right-4 text-gray-600 hover:text-gray-300 transition-colors"
+                            onClick={() => { setShowDeleteModal(false); setDeleteEmailInput(''); }}
+                            className="absolute top-4 right-4 text-gray-600 hover:text-gray-300 transition-colors p-1 active:scale-90"
                         >
                             <X className="w-4 h-4" />
                         </button>
 
+                        {/* Icon */}
                         <div className="w-10 h-10 rounded-full bg-red-950/50 border border-red-900/40 flex items-center justify-center mb-4">
                             <Trash2 className="w-5 h-5 text-red-500" />
                         </div>
 
                         <h3 className="text-base font-semibold text-white mb-1">Delete Account</h3>
-                        <p className="text-xs text-gray-500 mb-5 leading-relaxed">
-                            This action is <span className="text-red-400 font-medium">permanent and irreversible</span>. All your data, websites, earnings records and settings will be deleted.
+                        <p className="text-xs text-gray-500 mb-4 sm:mb-5 leading-relaxed">
+                            This action is{' '}
+                            <span className="text-red-400 font-medium">permanent and irreversible</span>.
+                            All your data, websites, earnings records and settings will be deleted.
                         </p>
 
+                        {/* Account email chip */}
                         <div className="p-3 bg-[#0d0d0d] border border-gray-800/50 rounded-lg mb-4">
                             <p className="text-xs text-gray-600 mb-1">Account to be deleted</p>
-                            <p className="text-sm text-gray-200 font-mono">{userEmail}</p>
+                            <p className="text-sm text-gray-200 font-mono break-all">{userEmail}</p>
                         </div>
 
-                        <div className="mb-5">
+                        {/* Confirmation input */}
+                        <div className="mb-4 sm:mb-5">
                             <label className="text-xs text-gray-600 uppercase tracking-widest mb-2 block">
                                 Type your email to confirm
                             </label>
                             <input
                                 type="email"
                                 value={deleteEmailInput}
-                                onChange={(e) => setDeleteEmailInput(e.target.value)}
+                                onChange={e => setDeleteEmailInput(e.target.value)}
                                 placeholder={userEmail}
                                 className="w-full bg-[#0d0d0d] border border-gray-800/60 rounded-lg px-4 py-3 text-sm text-gray-200 placeholder-gray-700 font-mono focus:outline-none transition-colors duration-150"
                                 onFocus={e => e.currentTarget.style.borderColor = 'rgba(239,68,68,0.5)'}
@@ -462,15 +574,15 @@ const Settings = () => {
 
                         <div className="flex gap-3">
                             <button
-                                onClick={() => { setShowDeleteModal(false); setDeleteEmailInput(""); }}
-                                className="flex-1 px-4 py-2.5 rounded-lg bg-[#161616] border border-gray-800/60 text-gray-300 text-sm font-medium hover:border-gray-600 transition-all duration-150"
+                                onClick={() => { setShowDeleteModal(false); setDeleteEmailInput(''); }}
+                                className="flex-1 px-4 py-3 sm:py-2.5 rounded-lg bg-[#161616] border border-gray-800/60 text-gray-300 text-sm font-medium hover:border-gray-600 transition-all duration-150 active:scale-95"
                             >
                                 Cancel
                             </button>
                             <button
                                 onClick={handleDeleteAccount}
                                 disabled={!emailMatches}
-                                className="flex-1 px-4 py-2.5 rounded-lg text-sm font-semibold transition-all duration-150 flex items-center justify-center gap-2"
+                                className="flex-1 px-4 py-3 sm:py-2.5 rounded-lg text-sm font-semibold transition-all duration-150 flex items-center justify-center gap-2 active:scale-95"
                                 style={{
                                     background: emailMatches ? 'rgba(127,29,29,0.6)' : 'rgba(30,30,30,1)',
                                     border: emailMatches ? '1px solid rgba(239,68,68,0.5)' : '1px solid rgba(255,255,255,0.06)',
@@ -479,13 +591,12 @@ const Settings = () => {
                                 }}
                             >
                                 <Trash2 className="w-3.5 h-3.5" />
-                                Delete Account
+                                Delete
                             </button>
                         </div>
                     </div>
                 </div>
             )}
-
         </div>
     );
 };

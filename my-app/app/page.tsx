@@ -30,18 +30,18 @@ export default function GetStarted() {
     const { data: session, status } = useSession();
 
     useEffect(() => {
-    if (status === 'loading') return;
-    if (session?.user) {
-        const role = (session.user as any).role;
-        if (!role) {
-            window.location.href = '/Role';
-        } else if (role === 'advertiser') {
-            window.location.href = '/Advertiser/Dashboard';
-        } else if (role === 'publisher') {
-            window.location.href = '/Publisher/Dashboard';
+        if (status === 'loading') return;
+        if (session?.user) {
+            const role = (session.user as any).role;
+            if (!role) {
+                window.location.href = '/Role';
+            } else if (role === 'advertiser') {
+                window.location.href = '/Advertiser/Dashboard';
+            } else if (role === 'publisher') {
+                window.location.href = '/Publisher/Dashboard';
+            }
         }
-    }
-}, [session, status]);
+    }, [session, status]);
 
     useEffect(() => {
         const handleMouseMove = (e) => {
@@ -66,7 +66,7 @@ export default function GetStarted() {
 
     return (
         <div className="min-h-screen bg-black text-white font-mono overflow-x-hidden relative" onClick={handleParticleClick}>
-            
+
             {/* Floating particles */}
             {particles.map(particle => (
                 <div
@@ -82,14 +82,14 @@ export default function GetStarted() {
                 </div>
             ))}
 
-          <div 
-    className="fixed pointer-events-none w-96 h-96 rounded-full blur-[100px] opacity-20"
-    style={{
-        background: 'radial-gradient(circle, #3b82f6, #14b8a6, #eab308)',
-        left: mousePosition.x - 192,
-        top: mousePosition.y - 192,
-    }}
-/>
+            <div
+                className="fixed pointer-events-none w-96 h-96 rounded-full blur-[100px] opacity-20"
+                style={{
+                    background: 'radial-gradient(circle, #3b82f6, #14b8a6, #eab308)',
+                    left: mousePosition.x - 192,
+                    top: mousePosition.y - 192,
+                }}
+            />
 
             <div className="fixed inset-0 pointer-events-none opacity-5">
                 <div className="absolute inset-0" style={{
@@ -99,12 +99,9 @@ export default function GetStarted() {
                 }} />
             </div>
 
-            <div className="fixed bottom-4 right-4 z-50 text-xs text-zinc-700 bg-black/80 backdrop-blur px-3 py-1.5 rounded-full border border-zinc-800">
-                clicks: {clickCount}
-            </div>
 
-            <header className="relative z-10 flex items-center justify-between px-6 py-4 border-b border-zinc-900 bg-black/50 backdrop-blur-sm sticky top-0">
-                <div 
+            <header className="relative z-10 flex items-center justify-between px-4 py-3 border-b border-zinc-900 bg-black/50 backdrop-blur-sm sticky top-0">
+                <div
                     onClick={() => router.push('/')}
                     className="flex items-center gap-2 cursor-pointer group"
                 >
@@ -130,39 +127,38 @@ export default function GetStarted() {
 
             <main className="relative z-10">
 
-                <section className="px-6 py-24 border-b border-zinc-900">
+                <section className="px-4 sm:px-6 py-16 sm:py-24 border-b border-zinc-900">
                     <div className="max-w-3xl mx-auto">
-                        <div className="inline-flex items-center gap-2 text-xs text-zinc-600 mb-8 animate-pulse">
+                        <div className="inline-flex items-center gap-2 text-xs text-zinc-600 mb-6 sm:mb-8 animate-pulse">
                             <span className="w-1.5 h-1.5 bg-green-500 rounded-full animate-ping" />
                             SOLANA · ON-CHAIN ADS
                             <Sparkles className="w-3 h-3 ml-1 animate-spin-slow" />
                         </div>
-                        <h1 className="text-5xl sm:text-7xl font-bold tracking-tighter leading-[1.1] mb-6">
+                        <h1 className="text-4xl sm:text-7xl font-bold tracking-tighter leading-[1.1] mb-5">
                             pay for<br />
                             <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-500 via-teal-500 to-yellow-500 animate-gradient">
                                 real clicks.
                             </span>
                         </h1>
-                        <p className="text-base text-zinc-500 max-w-md mb-10 leading-relaxed animate-fade-in">
+                        <p className="text-sm sm:text-base text-zinc-500 max-w-md mb-8 leading-relaxed animate-fade-in">
                             Campaigns settle in SOL. Every click verified. Zero bullshit.
                         </p>
-                        <div className="flex gap-3">
+                        <div className="flex flex-col sm:flex-row gap-3">
                             <button
                                 onClick={() => signIn('google')}
-                                className="flex cursor-pointer  items-center gap-2 px-6 py-2.5 bg-white text-black text-sm font-medium hover:bg-zinc-200 transition transform hover:scale-105 active:scale-95 group"
+                                className="flex cursor-pointer items-center justify-center gap-2 px-6 py-3 bg-white text-black text-sm font-medium hover:bg-zinc-200 transition transform hover:scale-105 active:scale-95 group w-full sm:w-auto"
                             >
                                 start campaign
                                 <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
                             </button>
                             <button
                                 onClick={() => document.getElementById('how')?.scrollIntoView({ behavior: 'smooth' })}
-                                className="px-6 py-2.5 border border-zinc-800 text-sm text-zinc-400 hover:border-zinc-600 hover:text-zinc-200 transition relative overflow-hidden group"
+                                className="px-6 py-3 border border-zinc-800 text-sm text-zinc-400 hover:border-zinc-600 hover:text-zinc-200 transition relative overflow-hidden group w-full sm:w-auto text-center"
                             >
                                 <span className="relative z-10">how it works</span>
-                                <span className="absolute cursor-pointer  inset-0 bg-zinc-800 translate-x-[-100%] group-hover:translate-x-0 transition-transform" />
+                                <span className="absolute cursor-pointer inset-0 bg-zinc-800 translate-x-[-100%] group-hover:translate-x-0 transition-transform" />
                             </button>
                         </div>
-
                         <div className="absolute left-0 top-1/2 -translate-y-1/2 hidden xl:block">
                             {FLOATING_ICONS.map((Icon, i) => (
                                 <div
@@ -194,12 +190,12 @@ export default function GetStarted() {
                     </div>
                 </section>
 
-                <section id="features" className="px-6 py-24 border-b border-zinc-900">
+                <section id="features" className="px-4 sm:px-6 py-16 sm:py-24 border-b border-zinc-900">
                     <div className="max-w-4xl mx-auto">
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 sm:gap-8">
                             {FEATURES.map(({ icon: Icon, title, desc, color }, idx) => (
-                                <div 
-                                    key={title} 
+                                <div
+                                    key={title}
                                     className="border-l border-zinc-800 pl-5 hover:border-l-4 transition-all group cursor-pointer transform hover:-translate-y-1"
                                     style={{ '--hover-color': color }}
                                 >
@@ -218,9 +214,9 @@ export default function GetStarted() {
                     </div>
                 </section>
 
-                <section id="how" className="px-6 py-24 border-b border-zinc-900">
+                <section id="how" className="px-4 sm:px-6 py-16 sm:py-24 border-b border-zinc-900">
                     <div className="max-w-4xl mx-auto">
-                        <div className="mb-12">
+                        <div className="mb-8 sm:mb-12">
                             <p className="text-xs text-zinc-600 mb-2 flex items-center gap-2">
                                 <Zap className="w-3 h-3 animate-pulse" />
                                 THE CYCLE
@@ -252,7 +248,7 @@ export default function GetStarted() {
                     </div>
                 </section>
 
-                <section className="px-6 py-32 relative overflow-hidden">
+                <section className="px-4 sm:px-6 py-20 sm:py-32 relative overflow-hidden">
                     <div className="absolute inset-0 pointer-events-none">
                         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-gradient-to-r from-blue-500/10 to-teal-500/10 rounded-full blur-3xl animate-pulse" />
                     </div>
@@ -274,7 +270,7 @@ export default function GetStarted() {
                             <ArrowRight className="w-4 h-4 relative z-10 group-hover:translate-x-1 transition-transform" />
                             <span className="absolute inset-0 bg-gradient-to-r from-blue-500 to-teal-500 translate-x-[-100%] group-hover:translate-x-0 transition-transform" />
                         </button>
-                        
+
                         {/* Fun mouse trail effect for this button */}
                         <div className="absolute -bottom-12 left-1/2 -translate-x-1/2 text-[10px] text-zinc-800 whitespace-nowrap animate-pulse">
                             ⚡ click anywhere for particle effect ⚡
@@ -284,12 +280,12 @@ export default function GetStarted() {
 
             </main>
 
-            <footer className="relative z-10 border-t border-zinc-900 px-6 py-6 flex flex-col sm:flex-row justify-between items-center gap-3 text-xs text-zinc-700">
+            <footer className="relative z-10 border-t border-zinc-900 px-4 sm:px-6 py-6 flex flex-col sm:flex-row justify-between items-center gap-4 text-xs text-zinc-700 text-center">
                 <span className="hover:text-zinc-500 transition">clickora © 2025</span>
                 <div className="flex gap-6">
                     {['privacy', 'terms', 'docs', 'github'].map(item => (
-                        <span 
-                            key={item} 
+                        <span
+                            key={item}
                             className="hover:text-zinc-400 cursor-pointer transition relative group"
                         >
                             {item}

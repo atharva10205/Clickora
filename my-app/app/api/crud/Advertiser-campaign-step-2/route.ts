@@ -35,8 +35,8 @@ async function uploadToS3(file: File, folder = "campaign-images"): Promise<strin
         throw new Error("Failed to upload image");
     }
 }
-
 export async function POST(req: Request) {
+    try {
     const formData = await req.formData();
 
     const image = formData.get("image") as File | null;
@@ -78,42 +78,29 @@ export async function POST(req: Request) {
         }
 
         imageUrl = await uploadToS3(image);
-        if (input) {
-            const res = await prisma.ad.update({
+        const keywords = input ? [input] : KeyWords;
 
-                where: {
-                    id: adID
-                },
-                data: ({
-                    title: Title,
-                    Description: description,
-                    Tags: cleanTags,
-                    keywords: [input],
-                    imageUrl: imageUrl,
-                })
-            })
-        } else {
-            const res = await prisma.ad.update({
+        await prisma.ad.update({
+            where: { id: adID },
+            data: {
+                title: Title,
+                Description: description,
+                Tags: cleanTags,
+                keywords,
+                imageUrl: imageUrl,
+            }
+        });
 
-                where: {
-                    id: adID
-                },
-                data: ({
-                    title: Title,
-                    Description: description,
-                    Tags: cleanTags,
-                    keywords: KeyWords,
-                    imageUrl: imageUrl,
-                })
-            })
-        }
         return NextResponse.json({
             success: true,
             imageUrl: imageUrl
         });
+ }
+    } catch (error) {
+        console.error("Step 2 POST error:", error);
+        return NextResponse.json({ error: "Internal server error" }, { status: 500 });
     }
 }
-
 import { auth } from "@/app/api/auth/[...nextauth]/route";
 
 export async function GET(req: Request) {

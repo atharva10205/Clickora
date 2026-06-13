@@ -86,6 +86,7 @@ const Campaigns = () => {
     const [accent, setAccent] = useState('#10B981');
     const [showBudgetPopup, setShowBudgetPopup] = useState(false);
     const [toasts, setToasts] = useState<Toast[]>([]);
+    const [sidebarOpen, setSidebarOpen] = useState(false);
     const [sortKey, setSortKey] = useState<SortKey>('date');
     const [sortDir, setSortDir] = useState<SortDir>('desc');
 
@@ -217,20 +218,37 @@ const Campaigns = () => {
             `}</style>
 
             <div className="flex h-screen bg-[#0a0a0a] text-gray-300">
-                <Sidebar activeTab={activeTab} />
+                {sidebarOpen && (
+                    <div
+                        className="fixed inset-0 bg-black/60 z-20 lg:hidden"
+                        onClick={() => setSidebarOpen(false)}
+                    />
+                )}
 
-                <main className="flex-1 p-8 overflow-y-auto">
+                <Sidebar activeTab={activeTab} isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+
+                <main className="flex-1 p-4 sm:p-8 overflow-y-auto">
                     <div className="max-w-6xl">
 
-                        <div className="flex items-center font-mono justify-between mb-10">
-                            <div>
-                                <h1 className="text-3xl font-bold mb-1 text-white tracking-tight">Campaigns</h1>
-                                <p className="text-gray-600 text-sm">Manage your advertising campaigns</p>
+                        <div className="flex items-center justify-between mb-10 font-mono">
+                            <div className="flex items-center gap-3">
+                                <button
+                                    onClick={() => setSidebarOpen(true)}
+                                    className="lg:hidden flex flex-col gap-1 p-1.5 rounded-md hover:bg-[#161616] transition-colors flex-shrink-0"
+                                >
+                                    <span className="w-4 h-px bg-gray-400" />
+                                    <span className="w-4 h-px bg-gray-400" />
+                                    <span className="w-4 h-px bg-gray-400" />
+                                </button>
+                                <div>
+                                    <h1 className="text-lg sm:text-3xl font-bold mb-0.5 text-white tracking-tight">Campaigns</h1>
+                                    <p className="text-gray-600 text-xs sm:text-sm hidden sm:block">Manage your advertising campaigns</p>
+                                </div>
                             </div>
 
                             <button
                                 onClick={() => router.push("/Advertiser-campaign")}
-                                className="flex cursor-pointer items-center gap-2 px-5 py-2.5 rounded-xl bg-[#161616] text-gray-200 text-sm font-semibold hover:-translate-y-0.5 active:translate-y-0 transition-all duration-200"
+                                className="flex cursor-pointer items-center gap-1.5 px-3 py-1.5 sm:px-5 sm:py-2.5 rounded-xl bg-[#161616] text-gray-200 text-xs sm:text-sm font-semibold hover:-translate-y-0.5 active:translate-y-0 transition-all duration-200 flex-shrink-0"
                                 style={{ border: `1px solid ${alpha(0.18)}` }}
                                 onMouseEnter={e => {
                                     e.currentTarget.style.borderColor = accent;
@@ -243,8 +261,9 @@ const Campaigns = () => {
                                     e.currentTarget.style.color = '';
                                 }}
                             >
-                                <Plus className="w-4  h-4" />
-                                New Campaign
+                                <Plus className="w-3.5 h-3.5" />
+                                <span className="hidden sm:inline">New Campaign</span>
+                                <span className="sm:hidden">New</span>
                             </button>
                         </div>
 

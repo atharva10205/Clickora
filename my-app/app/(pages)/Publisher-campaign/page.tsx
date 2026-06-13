@@ -25,7 +25,6 @@ export default function WebsiteRegistrationForm() {
     };
 
     const router = useRouter();
-
     const [accent, setAccent] = useState('#ffffff');
 
     const alpha = (op: number) => {
@@ -34,6 +33,7 @@ export default function WebsiteRegistrationForm() {
         const b = parseInt(accent.slice(5, 7), 16);
         return `rgba(${r},${g},${b},${op})`;
     };
+
     useEffect(() => {
         const get_wallet_address = async () => {
             const res = await fetch("/api/crud/Publisher-campaign");
@@ -142,10 +142,10 @@ export default function WebsiteRegistrationForm() {
             )}
 
             {toast && (
-                <div className="fixed bottom-6  left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 px-5 py-3 rounded-lg bg-[#1a1a1a] border border-red-500/30 shadow-xl">
+                <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 px-4 sm:px-5 py-3 rounded-lg bg-[#1a1a1a] border border-red-500/30 shadow-xl w-[calc(100vw-2rem)] sm:w-auto max-w-sm">
                     <div className="w-1.5 h-1.5 rounded-full bg-red-400 shrink-0" />
-                    <p className="text-sm text-red-300 font-mono">{toast}</p>
-                    <button onClick={() => setToast(null)} className="text-gray-600 cursor-pointer hover:text-gray-300 transition-colors ml-2">
+                    <p className="text-sm text-red-300 font-mono flex-1 min-w-0 break-words">{toast}</p>
+                    <button onClick={() => setToast(null)} className="text-gray-600 cursor-pointer hover:text-gray-300 transition-colors ml-2 shrink-0">
                         <X className="w-3.5 h-3.5" />
                     </button>
                 </div>
@@ -153,28 +153,29 @@ export default function WebsiteRegistrationForm() {
 
             <div className="min-h-screen bg-[#0a0a0a] text-gray-300">
 
-                <header className="bg-[#0c0c0c] border-b border-[#1f1f1f]">
-                    <div className="max-w-4xl mx-auto px-6">
+                {/* Header */}
+                <header className="bg-[#0c0c0c] border-b border-[#1f1f1f] sticky top-0 z-10">
+                    <div className="max-w-4xl mx-auto px-4 sm:px-6">
                         <div className="flex items-center justify-between h-14">
-                            <div className="flex items-center gap-3">
+                            <div className="flex items-center gap-2 sm:gap-3 min-w-0">
                                 <button
                                     onClick={() => router.back()}
-                                    className="w-7 cursor-pointer h-7 rounded-md bg-[#1a1a1a] border border-[#2a2a2a] flex items-center justify-center hover:border-gray-600 hover:text-gray-300 text-gray-500 transition-all duration-150"
+                                    className="w-7 h-7 shrink-0 cursor-pointer rounded-md bg-[#1a1a1a] border border-[#2a2a2a] flex items-center justify-center hover:border-gray-600 hover:text-gray-300 text-gray-500 transition-all duration-150"
                                 >
                                     <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7" />
                                     </svg>
                                 </button>
-                                <span className="text-gray-700">|</span>
-                                <span className="text-white font-semibold text-sm tracking-tight">Publisher Campaign</span>
-                                <span className="text-gray-700">|</span>
-                                <span className="text-gray-500 text-sm">Register Your Website</span>
+                                <span className="text-gray-700 hidden sm:inline">|</span>
+                                <span className="text-white font-semibold text-sm tracking-tight truncate">Publisher Campaign</span>
+                                <span className="text-gray-700 hidden sm:inline">|</span>
+                                <span className="text-gray-500 text-xs sm:text-sm hidden sm:inline truncate">Register Your Website</span>
                             </div>
-                            <div className="flex items-center gap-2">
+                            <div className="flex items-center gap-2 shrink-0">
                                 {userName && (
-                                    <span className="text-xs text-gray-500 font-mono hidden sm:block">{userName}</span>
+                                    <span className="text-xs text-gray-500 font-mono hidden sm:block truncate max-w-[120px]">{userName}</span>
                                 )}
-                                <div className="w-7 h-7 rounded-md bg-[#1a1a1a] border border-[#2a2a2a] overflow-hidden flex items-center justify-center">
+                                <div className="w-7 h-7 rounded-md bg-[#1a1a1a] border border-[#2a2a2a] overflow-hidden flex items-center justify-center shrink-0">
                                     {userImage ? (
                                         <img src={userImage} alt={userName} className="w-full h-full object-cover" />
                                     ) : (
@@ -186,17 +187,19 @@ export default function WebsiteRegistrationForm() {
                     </div>
                 </header>
 
-                <main className="max-w-4xl mx-auto px-6 py-8">
+                <main className="max-w-4xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
                     <div className="bg-[#111111] border border-gray-800/70 rounded-xl overflow-hidden">
 
-                        <div className="px-8 py-6 border-b border-gray-800/60">
+                        {/* Card header */}
+                        <div className="px-5 sm:px-8 py-5 sm:py-6 border-b border-gray-800/60">
                             <p className="text-xs text-gray-600 uppercase tracking-widest font-mono mb-2">Website Details</p>
-                            <h1 className="text-xl font-semibold text-white tracking-tight mb-1">Register your website to start earning</h1>
+                            <h1 className="text-lg sm:text-xl font-semibold text-white tracking-tight mb-1">Register your website to start earning</h1>
                             <p className="text-xs text-gray-600">Fill in your website details and we'll review your application within 24 hours</p>
                         </div>
 
-                        <div className="p-8 space-y-8">
+                        <div className="p-5 sm:p-8 space-y-6 sm:space-y-8">
 
+                            {/* Website Name */}
                             <div>
                                 <label className="text-xs text-gray-600 uppercase tracking-widest mb-2 block">Website Name</label>
                                 <div className="relative">
@@ -214,6 +217,7 @@ export default function WebsiteRegistrationForm() {
                                 {errors.websiteName && <p className="mt-1.5 text-xs text-red-400 font-mono">{errors.websiteName}</p>}
                             </div>
 
+                            {/* Website URL */}
                             <div>
                                 <label className="text-xs text-gray-600 uppercase tracking-widest mb-2 block">Website URL / Domain</label>
                                 <div className="relative">
@@ -231,6 +235,7 @@ export default function WebsiteRegistrationForm() {
                                 {errors.websiteURL && <p className="mt-1.5 text-xs text-red-400 font-mono">{errors.websiteURL}</p>}
                             </div>
 
+                            {/* Wallet Address */}
                             <div>
                                 <label className="text-xs text-gray-600 uppercase tracking-widest mb-2 block">Wallet Address</label>
                                 <p className="text-xs text-gray-600 mb-2">Your public wallet address to receive payments</p>
@@ -258,6 +263,7 @@ export default function WebsiteRegistrationForm() {
                                 )}
                             </div>
 
+                            {/* Niches */}
                             <div>
                                 <div className="flex items-center justify-between mb-2">
                                     <label className={`text-xs uppercase tracking-widest font-mono ${errors.selectedNiches ? 'text-red-400' : 'text-gray-600'}`}>
@@ -290,7 +296,7 @@ export default function WebsiteRegistrationForm() {
                                     </div>
                                 )}
 
-                                {/* Niche grid */}
+                                {/* Niche grid — 3 cols mobile, 4 sm, 5 md+ */}
                                 <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-2">
                                     {niches.map((niche) => {
                                         const nicheText = `${niche.emoji} ${niche.label}`;
@@ -306,7 +312,7 @@ export default function WebsiteRegistrationForm() {
                                                     else if (selectedNiches.length < 15) setSelectedNiches([...selectedNiches, nicheText]);
                                                 }}
                                                 disabled={isDisabled}
-                                                className="relative flex flex-col items-center justify-center gap-2 p-4 rounded-lg border transition-all duration-150 aspect-square"
+                                                className="relative flex flex-col items-center justify-center gap-1.5 sm:gap-2 p-2.5 sm:p-4 rounded-lg border transition-all duration-150 aspect-square"
                                                 style={{
                                                     background: isSelected ? '#1c1c1c' : '#0d0d0d',
                                                     border: `1px solid ${isSelected ? accent : 'rgba(255,255,255,0.06)'}`,
@@ -318,14 +324,14 @@ export default function WebsiteRegistrationForm() {
                                                 onMouseLeave={e => { if (!isSelected && !isDisabled) (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.06)'; }}
                                             >
                                                 {isSelected && (
-                                                    <div className="absolute top-2 right-2 w-4 h-4 rounded-full bg-white flex items-center justify-center">
-                                                        <svg className="w-2.5 h-2.5 text-black" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <div className="absolute top-1.5 right-1.5 sm:top-2 sm:right-2 w-3.5 h-3.5 sm:w-4 sm:h-4 rounded-full bg-white flex items-center justify-center">
+                                                        <svg className="w-2 h-2 sm:w-2.5 sm:h-2.5 text-black" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7" />
                                                         </svg>
                                                     </div>
                                                 )}
-                                                <span className="text-2xl">{niche.emoji}</span>
-                                                <span className={`text-[10px] font-medium text-center leading-tight ${isSelected ? 'text-white' : 'text-gray-500'}`}>
+                                                <span className="text-xl sm:text-2xl">{niche.emoji}</span>
+                                                <span className={`text-[9px] sm:text-[10px] font-medium text-center leading-tight ${isSelected ? 'text-white' : 'text-gray-500'}`}>
                                                     {niche.label}
                                                 </span>
                                             </button>
@@ -342,7 +348,6 @@ export default function WebsiteRegistrationForm() {
                                 <div
                                     className="min-h-[48px] px-3 py-2 bg-[#0d0d0d] border border-gray-800/60 rounded-lg flex flex-wrap gap-2 items-center transition-colors duration-150"
                                     style={{ borderColor: errors.keywords ? 'rgba(239,68,68,0.5)' : undefined }}
-                                    onFocus={() => { }}
                                 >
                                     {keywords.map((kw, i) => (
                                         <span key={i} className="flex items-center gap-1 bg-[#1c1c1c] border border-gray-700/60 text-gray-300 px-2 py-0.5 rounded text-xs font-mono">
@@ -358,7 +363,7 @@ export default function WebsiteRegistrationForm() {
                                         onChange={(e) => setKeywordInput(e.target.value)}
                                         onKeyDown={handleKeyDown}
                                         placeholder={keywords.length === 0 ? "Type and press Enter…" : ""}
-                                        className="flex-1 outline-none text-sm text-gray-200 placeholder-gray-700 bg-transparent font-mono min-w-[120px]"
+                                        className="flex-1 outline-none text-sm text-gray-200 placeholder-gray-700 bg-transparent font-mono min-w-[100px]"
                                         onFocus={e => (e.currentTarget.closest('div') as HTMLElement).style.borderColor = accent}
                                         onBlur={e => (e.currentTarget.closest('div') as HTMLElement).style.borderColor = errors.keywords ? 'rgba(239,68,68,0.5)' : 'rgba(255,255,255,0.08)'}
                                     />
@@ -369,16 +374,16 @@ export default function WebsiteRegistrationForm() {
                         </div>
 
                         {/* Footer actions */}
-                        <div className="px-8 py-5 bg-[#0d0d0d] border-t border-gray-800/60 flex items-center justify-between">
+                        <div className="px-5 sm:px-8 py-4 sm:py-5 bg-[#0d0d0d] border-t border-gray-800/60 flex items-center justify-between gap-3">
                             <button
                                 onClick={() => router.push("/Publisher/Websites")}
-                                className="px-5 py-2.5 rounded-lg bg-[#161616] border border-gray-800/60 text-gray-400 text-sm font-medium hover:text-gray-200 hover:border-gray-600 transition-all duration-150"
+                                className="px-4 sm:px-5 py-2.5 rounded-lg bg-[#161616] border border-gray-800/60 text-gray-400 text-sm font-medium hover:text-gray-200 hover:border-gray-600 transition-all duration-150"
                             >
                                 Cancel
                             </button>
                             <button
                                 onClick={handleSubmit}
-                                className="px-6 py-2.5 rounded-lg bg-[#161616] text-gray-200 text-sm font-semibold hover:-translate-y-0.5 active:translate-y-0 transition-all duration-200"
+                                className="px-5 sm:px-6 py-2.5 rounded-lg bg-[#161616] text-gray-200 text-sm font-semibold hover:-translate-y-0.5 active:translate-y-0 transition-all duration-200"
                                 style={{ border: `1px solid ${alpha(0.25)}` }}
                                 onMouseEnter={e => {
                                     e.currentTarget.style.borderColor = accent;

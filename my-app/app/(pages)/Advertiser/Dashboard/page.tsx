@@ -362,11 +362,11 @@ const StatCard = ({ label, value, sub, icon: Icon, accent }: {
     </div>
 );
 
-
 const Dashboard = () => {
     const activeTab = 'Dashboard';
     const router = useRouter();
     const { status } = useSession();
+    const [sidebarOpen, setSidebarOpen] = useState(false);
 
     const [data, setData] = useState<DashboardData | null>(null);
     const [isLoading, setIsLoading] = useState(true);
@@ -392,7 +392,7 @@ const Dashboard = () => {
     if (isLoading) {
         return (
             <div className="flex h-screen bg-[#0a0a0a] text-gray-200">
-                <Sidebar activeTab={activeTab} />
+                <Sidebar activeTab={activeTab} isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
                 <main className="flex-1 p-6 overflow-auto">
                     <div className="animate-pulse space-y-3">
                         <div className="grid grid-cols-3 gap-3">
@@ -413,7 +413,7 @@ const Dashboard = () => {
     if (error) {
         return (
             <div className="flex h-screen bg-[#0a0a0a] text-gray-200">
-                <Sidebar activeTab={activeTab} />
+                <Sidebar activeTab={activeTab} isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
                 <main className="flex-1 p-6 overflow-auto">
                     <p className="text-red-500 text-sm font-mono">Error loading data. Please try again.</p>
                 </main>
@@ -428,14 +428,34 @@ const Dashboard = () => {
 
     return (
         <div className="flex h-screen bg-[#0a0a0a] text-gray-200 font-sans">
-            <Sidebar activeTab={activeTab} />
-            <main className="flex-1 font-mono overflow-auto">
-                <div className="p-6 space-y-3">
+            {/* Mobile overlay */}
+            {sidebarOpen && (
+                <div
+                    className="fixed inset-0 bg-black/60 z-20 lg:hidden"
+                    onClick={() => setSidebarOpen(false)}
+                />
+            )}
+
+            <Sidebar activeTab={activeTab} isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+
+            <main className="flex-1 font-mono overflow-auto min-w-0">
+                <div className="p-4 sm:p-6 space-y-3">
 
                     <div className="flex items-center justify-between">
-                        <div>
-                            <h1 className="text-sm font-semibold text-white">Dashboard</h1>
-                            <p className="text-xs text-gray-600 mt-0.5">Campaign overview</p>
+                        <div className="flex items-center gap-3">
+                            {/* Hamburger — only visible on mobile */}
+                            <button
+                                onClick={() => setSidebarOpen(true)}
+                                className="lg:hidden flex flex-col gap-1 p-1.5 rounded-md hover:bg-[#161616] transition-colors"
+                            >
+                                <span className="w-4 h-px bg-gray-400" />
+                                <span className="w-4 h-px bg-gray-400" />
+                                <span className="w-4 h-px bg-gray-400" />
+                            </button>
+                            <div>
+                                <h1 className="text-sm font-semibold text-white">Dashboard</h1>
+                                <p className="text-xs text-gray-600 mt-0.5">Campaign overview</p>
+                            </div>
                         </div>
                         <button
                             onClick={() => router.push('/Advertiser-campaign')}
@@ -443,11 +463,12 @@ const Dashboard = () => {
                             style={{ background: accent, color: '#000000' }}
                         >
                             <Plus className="w-3.5 h-3.5" />
-                            New Campaign
+                            <span className="hidden sm:inline">New Campaign</span>
+                            <span className="sm:hidden">New</span>
                         </button>
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                         <StatCard label="Active Campaigns" value={String(activeCampaigns)} icon={Target} />
                         <StatCard
                             label="Total Clicks"
@@ -484,119 +505,110 @@ const Dashboard = () => {
                                 <p className="text-xs text-gray-700 mt-1">Create your first campaign to see data here</p>
                             </div>
                         ) : (
-                            <div className="flex gap-6 p-5" style={{ maxHeight: '18rem' }}>
-                                <div className="flex-1 min-w-0 space-y-5 overflow-y-auto pr-2"
-                                    style={{ scrollbarWidth: 'thin', scrollbarColor: '#2a2a2a transparent' }}>
+                            <div className="p-5 space-y-4">
+
+                                {/* Compact summary row */}
+                                <div className="flex items-center gap-4">
+                                    <StatusDonut campaigns={campaigns} accent={accent} />
+                                    <div className="flex gap-6">
+                                        <div>
+                                            <p className="text-xs text-gray-600 mb-1">Active</p>
+                                            <p className="text-lg font-bold font-mono tabular-nums" style={{ color: accent }}>
+                                                {campaigns.filter(c => c.status === 'Active').length}
+                                            </p>
+                                        </div>
+                                        <div>
+                                            <p className="text-xs text-gray-600 mb-1">Paused</p>
+                                            <p className="text-lg font-bold font-mono tabular-nums text-zinc-500">
+                                                {campaigns.filter(c => c.status === 'Paused').length}
+                                            </p>
+                                        </div>
+                                        <div>
+                                            <p className="text-xs text-gray-600 mb-1">Total</p>
+                                            <p className="text-lg font-bold font-mono tabular-nums text-white">
+                                                {campaigns.length}
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Divider */}
+                                <div className="h-px bg-[#1a1a1a]" />
+
+                                {/* Campaign list */}
+                                <div className="space-y-3 overflow-y-auto"
+                                    style={{ maxHeight: '14rem', scrollbarWidth: 'thin', scrollbarColor: '#2a2a2a transparent' }}>
                                     {campaigns.map((c, idx) => {
                                         const sharePct = totalCampaignSpend > 0 ? (c.spend / totalCampaignSpend) * 100 : 0;
+                                        const isActive = c.status === 'Active';
                                         return (
                                             <div key={c.name}>
-                                                <div className="flex items-center justify-between mb-2">
-                                                    <div className="flex items-center gap-2.5 min-w-0">
-                                                        <span className="text-xs text-gray-600 w-4 flex-shrink-0 tabular-nums">{idx + 1}</span>
-                                                        <span
-                                                            className="w-1.5 h-1.5 rounded-full flex-shrink-0"
-                                                            style={{ background: c.status === 'Active' ? accent : '#52525b' }}
-                                                        />
-                                                        <span className="text-sm text-gray-200 truncate max-w-[150px] font-medium">{c.name}</span>
+                                                {/* Name + spend on one line */}
+                                                <div className="flex items-center justify-between mb-1.5">
+                                                    <div className="flex items-center gap-2 min-w-0">
+                                                        <span className="text-xs text-gray-700 tabular-nums w-4 flex-shrink-0">{idx + 1}</span>
+                                                        <span className="w-1.5 h-1.5 rounded-full flex-shrink-0"
+                                                            style={{ background: isActive ? accent : '#52525b' }} />
+                                                        <span className="text-sm text-gray-200 font-medium truncate max-w-[140px]">{c.name}</span>
+                                                        <span className="text-[10px] flex-shrink-0 px-1.5 py-0.5 rounded font-mono"
+                                                            style={{
+                                                                background: isActive ? `${accent}18` : '#27272a',
+                                                                color: isActive ? accent : '#71717a'
+                                                            }}>
+                                                            {c.status}
+                                                        </span>
                                                     </div>
-                                                    <div className="flex items-center gap-3 flex-shrink-0 ml-2">
-                                                        <span className="text-xs text-gray-500 tabular-nums">{sharePct.toFixed(0)}% spend</span>
-                                                        <span className="text-sm font-semibold tabular-nums" style={{ color: accent }}>
+                                                    <div className="flex items-center gap-2 flex-shrink-0 ml-2">
+                                                        <span className="text-xs text-gray-600">{c.clicks.toLocaleString()} clicks</span>
+                                                        <span className="text-sm font-semibold tabular-nums font-mono" style={{ color: accent }}>
                                                             {c.spend.toFixed(4)}
                                                             <span className="text-[10px] text-gray-600 font-normal ml-0.5">SOL</span>
                                                         </span>
                                                     </div>
                                                 </div>
-                                                <div className="flex items-center gap-2">
-                                                    <div className="relative flex-1 h-2 bg-[#161616] rounded-sm overflow-hidden">
-                                                        <div
-                                                            className="absolute inset-y-0 left-0 rounded-sm transition-all duration-700"
-                                                            style={{
-                                                                width: `${c.performance}%`,
-                                                                background: c.status === 'Active'
-                                                                    ? `linear-gradient(90deg, rgba(0,0,0,0.3), ${accent})`
-                                                                    : '#3f3f46',
-                                                                opacity: 0.85,
-                                                            }}
-                                                        />
-                                                    </div>
-                                                    <span className="text-xs text-gray-500 tabular-nums flex-shrink-0 w-20 text-right whitespace-nowrap">
-                                                        {c.performance}% of clicks
-                                                    </span>
-                                                </div>
-                                                <div className="flex items-center gap-3 mt-1.5">
-                                                    <span className="text-xs text-gray-500">{c.clicks.toLocaleString()} clicks</span>
-                                                    <span className="text-xs text-gray-500">CPC {c.cpc}</span>
-                                                    <span className="text-xs" style={{ color: c.status === 'Active' ? accent : '#52525b' }}>
-                                                        {c.status}
-                                                    </span>
+
+                                                <div className="h-1 bg-[#1a1a1a] rounded-full overflow-hidden">
+                                                    <div className="h-full rounded-full transition-all duration-700"
+                                                        style={{
+                                                            width: `${sharePct}%`,
+                                                            background: isActive ? accent : '#3f3f46',
+                                                            opacity: 0.7,
+                                                        }} />
                                                 </div>
                                             </div>
                                         );
                                     })}
-                                </div>
-
-                                <div className="w-px self-stretch bg-[#1c1c1c] flex-shrink-0" />
-
-                                <div className="flex-shrink-0 flex flex-col items-center gap-3 w-36">
-                                    <StatusDonut campaigns={campaigns} accent={accent} />
-                                    <div className="w-full space-y-2">
-                                        <div className="flex items-center justify-between">
-                                            <div className="flex items-center gap-1.5">
-                                                <span className="w-1 h-3 rounded-sm" style={{ background: accent }} />
-                                                <span className="text-xs text-gray-500">Active</span>
-                                            </div>
-                                            <span className="text-xs font-semibold tabular-nums" style={{ color: accent }}>
-                                                {campaigns.filter(c => c.status === 'Active').length}
-                                            </span>
-                                        </div>
-                                        <div className="flex items-center justify-between">
-                                            <div className="flex items-center gap-1.5">
-                                                <span className="w-1 h-3 rounded-sm bg-zinc-600" />
-                                                <span className="text-xs text-gray-500">Paused</span>
-                                            </div>
-                                            <span className="text-xs font-semibold text-gray-500 tabular-nums">
-                                                {campaigns.filter(c => c.status === 'Paused').length}
-                                            </span>
-                                        </div>
-                                    </div>
                                 </div>
                             </div>
                         )}
                     </div>
 
                     {campaigns.length > 0 && (
-                        <div className="flex gap-3 overflow-x-auto pb-1"
-                            style={{ scrollbarWidth: 'thin', scrollbarColor: '#2a2a2a transparent' }}>
-                            <div className="min-w-[340px] flex-1">
-                                <BarChart
-                                    campaigns={campaigns}
-                                    metric="clicks"
-                                    label="Clicks"
-                                    color="#EDEDED"
-                                    overrideTotal={totalClicks}
-                                    formatValue={v => v >= 1000 ? `${(v / 1000).toFixed(1)}K clicks` : `${v} clicks`}
-                                />
-                            </div>
-                            <div className="min-w-[340px] flex-1">
-                                <BarChart
-                                    campaigns={campaigns}
-                                    metric="spend"
-                                    label="Spend"
-                                    color={accent}
-                                    overrideTotal={totalSpend}
-                                    formatValue={v => `${Number(v).toFixed(4)} SOL`}
-                                />
-                            </div>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <BarChart
+                                campaigns={campaigns}
+                                metric="clicks"
+                                label="Clicks"
+                                color="#EDEDED"
+                                overrideTotal={totalClicks}
+                                formatValue={v => v >= 1000 ? `${(v / 1000).toFixed(1)}K clicks` : `${v} clicks`}
+                            />
+                            <BarChart
+                                campaigns={campaigns}
+                                metric="spend"
+                                label="Spend"
+                                color={accent}
+                                overrideTotal={totalSpend}
+                                formatValue={v => `${Number(v).toFixed(4)} SOL`}
+                            />
                         </div>
                     )}
                     <LineChart color={accent} dailySpend={data?.dailySpend ?? []} />
-                    
+
                     <div className="bg-[#0d0d0d] border border-[#1c1c1c] rounded-2xl shadow-[0_8px_32px_rgba(0,0,0,0.5)]">
                         <div className="px-5 py-4 border-b border-[#1a1a1a] flex items-center justify-between">
                             <div>
-                                
+
                                 <h2 className="text-sm font-semibold text-white">All Campaigns</h2>
                                 <p className="text-xs text-gray-600 mt-0.5">Detailed stats</p>
                             </div>
@@ -611,61 +623,104 @@ const Dashboard = () => {
                                 <p className="text-sm text-gray-600 font-mono">No campaigns yet</p>
                                 <p className="text-xs text-gray-700 mt-1">Click "New Campaign" to get started</p>
                             </div>
-                        ) : (<div className="overflow-y-auto"
-                            style={{ maxHeight: '16rem', scrollbarWidth: 'thin', scrollbarColor: '#2a2a2a transparent', overflowY: 'scroll' }}>
-                            <table className="w-full">
-                                <thead className="sticky top-0 bg-[#0d0d0d] z-10">
-                                    <tr className="text-xs text-gray-600 border-b border-[#1a1a1a] uppercase tracking-widest">
-                                        <th className="text-left px-5 py-2.5 font-medium">#</th>
-                                        <th className="text-left px-5 py-2.5 font-medium">Campaign</th>
-                                        <th className="text-right px-5 py-2.5 font-medium">Clicks</th>
-                                        <th className="text-right px-5 py-2.5 font-medium">CPC</th>
-                                        <th className="text-right px-5 py-2.5 font-medium">Performance</th>
-                                        <th className="text-right px-5 py-2.5 font-medium">Spend</th>
-                                        <th className="text-right px-5 py-2.5 font-medium">Status</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
+                        ) : (
+                            <>
+                                {/* Desktop table — hidden on mobile */}
+                                <div className="hidden sm:block overflow-y-auto"
+                                    style={{ maxHeight: '16rem', scrollbarWidth: 'thin', scrollbarColor: '#2a2a2a transparent' }}>
+                                    <table className="w-full">
+                                        <thead className="sticky top-0 bg-[#0d0d0d] z-10">
+                                            <tr className="text-xs text-gray-600 border-b border-[#1a1a1a] uppercase tracking-widest">
+                                                <th className="text-left px-5 py-2.5 font-medium">#</th>
+                                                <th className="text-left px-5 py-2.5 font-medium">Campaign</th>
+                                                <th className="text-right px-5 py-2.5 font-medium">Clicks</th>
+                                                <th className="text-right px-5 py-2.5 font-medium">CPC</th>
+                                                <th className="text-right px-5 py-2.5 font-medium">Performance</th>
+                                                <th className="text-right px-5 py-2.5 font-medium">Spend</th>
+                                                <th className="text-right px-5 py-2.5 font-medium">Status</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {campaigns.map((c, idx) => (
+                                                <tr key={c.name}
+                                                    onClick={() => router.push('/Advertiser/Campaigns')}
+                                                    className="border-t border-[#141414] hover:bg-[#111] transition-colors cursor-pointer">
+                                                    <td className="px-5 py-3.5 text-xs text-gray-700 tabular-nums">{idx + 1}</td>
+                                                    <td className="px-5 py-3.5 text-sm font-medium text-gray-200 max-w-[160px] truncate">{c.name}</td>
+                                                    <td className="px-5 py-3.5 text-right text-sm text-gray-400 tabular-nums">
+                                                        {c.clicks >= 1000 ? `${(c.clicks / 1000).toFixed(1)}K` : c.clicks}
+                                                    </td>
+                                                    <td className="px-5 py-3.5 text-right text-sm text-gray-400 tabular-nums font-mono">{c.cpc}</td>
+                                                    <td className="px-5 py-3.5">
+                                                        <div className="flex items-center justify-end gap-2">
+                                                            <div className="w-16 h-1.5 bg-[#1a1a1a] rounded-full overflow-hidden">
+                                                                <div className="h-full rounded-full"
+                                                                    style={{ width: `${c.performance}%`, background: accent, opacity: 0.65 }} />
+                                                            </div>
+                                                            <span className="text-xs text-gray-500 tabular-nums w-7 text-right">{c.performance}%</span>
+                                                        </div>
+                                                    </td>
+                                                    <td className="px-5 py-3.5 text-right text-sm font-semibold tabular-nums" style={{ color: accent }}>
+                                                        {c.spend.toFixed(4)}
+                                                    </td>
+                                                    <td className="px-5 py-3.5 text-right">
+                                                        <span className="inline-flex items-center gap-1.5 text-xs font-semibold"
+                                                            style={{ color: c.status === 'Active' ? accent : '#71717a' }}>
+                                                            <span className="w-1.5 h-1.5 rounded-full"
+                                                                style={{ background: c.status === 'Active' ? accent : '#52525b' }} />
+                                                            {c.status}
+                                                        </span>
+                                                    </td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                </div>
+
+                                {/* Mobile cards — hidden on desktop */}
+                                <div className="sm:hidden divide-y divide-[#141414] overflow-y-auto"
+                                    style={{ maxHeight: '20rem', scrollbarWidth: 'thin', scrollbarColor: '#2a2a2a transparent' }}>
                                     {campaigns.map((c, idx) => (
-                                        <tr key={c.name}
-                                            onClick={() => router.push(`/Advertiser/Campaigns`)}
-                                            className="border-t border-[#141414] hover:bg-[#111] transition-colors cursor-pointer">
-                                            <td className="px-5 py-3.5 text-xs text-gray-700 tabular-nums">{idx + 1}</td>
-                                            <td className="px-5 py-3.5 text-sm font-medium text-gray-200">{c.name}</td>
-                                            <td className="px-5 py-3.5 text-right text-sm text-gray-400 tabular-nums">
-                                                {c.clicks >= 1000 ? `${(c.clicks / 1000).toFixed(1)}K` : c.clicks}
-                                            </td>
-                                            <td className="px-5 py-3.5 text-right text-sm text-gray-400 tabular-nums font-mono">{c.cpc}</td>
-                                            <td className="px-5 py-3.5">
-                                                <div className="flex items-center justify-end gap-2">
-                                                    <div className="w-20 h-1.5 bg-[#1a1a1a] rounded-full overflow-hidden">
-                                                        <div className="h-full rounded-full"
-                                                            style={{
-                                                                width: `${c.performance}%`,
-                                                                background: accent,
-                                                                opacity: 0.65,
-                                                            }} />
-                                                    </div>
-                                                    <span className="text-xs text-gray-500 tabular-nums w-8 text-right">{c.performance}%</span>
-                                                </div>
-                                            </td>
-                                            <td className="px-5 py-3.5 text-right text-sm font-semibold tabular-nums"
-                                                style={{ color: accent }}>
-                                                {c.spend.toFixed(4)}
-                                            </td>
-                                            <td className="px-5 py-3.5 text-right">
-                                                <span className="inline-flex items-center gap-1.5 text-xs font-semibold"
-                                                    style={{ color: c.status === 'Active' ? accent : '#71717a' }}>
-                                                    <span className="w-1.5 h-1.5 rounded-full"
+                                        <div key={c.name}
+                                            onClick={() => router.push('/Advertiser/Campaigns')}
+                                            className="px-4 py-3.5 hover:bg-[#111] transition-colors cursor-pointer">
+                                            {/* Row 1: index + name + status */}
+                                            <div className="flex items-center justify-between mb-2">
+                                                <div className="flex items-center gap-2 min-w-0">
+                                                    <span className="text-xs text-gray-700 tabular-nums w-4 flex-shrink-0">{idx + 1}</span>
+                                                    <span className="w-1.5 h-1.5 rounded-full flex-shrink-0"
                                                         style={{ background: c.status === 'Active' ? accent : '#52525b' }} />
+                                                    <span className="text-sm font-medium text-gray-200 truncate">{c.name}</span>
+                                                </div>
+                                                <span className="text-xs font-semibold flex-shrink-0 ml-2"
+                                                    style={{ color: c.status === 'Active' ? accent : '#71717a' }}>
                                                     {c.status}
                                                 </span>
-                                            </td>
-                                        </tr>
+                                            </div>
+                                            {/* Row 2: performance bar */}
+                                            <div className="flex items-center gap-2 mb-2">
+                                                <div className="flex-1 h-1.5 bg-[#1a1a1a] rounded-full overflow-hidden">
+                                                    <div className="h-full rounded-full"
+                                                        style={{ width: `${c.performance}%`, background: accent, opacity: 0.65 }} />
+                                                </div>
+                                                <span className="text-xs text-gray-600 tabular-nums flex-shrink-0">{c.performance}%</span>
+                                            </div>
+                                            {/* Row 3: stats */}
+                                            <div className="flex items-center justify-between">
+                                                <div className="flex items-center gap-3">
+                                                    <span className="text-xs text-gray-600">
+                                                        {c.clicks >= 1000 ? `${(c.clicks / 1000).toFixed(1)}K` : c.clicks} clicks
+                                                    </span>
+                                                    <span className="text-xs text-gray-600">CPC {c.cpc}</span>
+                                                </div>
+                                                <span className="text-sm font-semibold tabular-nums" style={{ color: accent }}>
+                                                    {c.spend.toFixed(4)} <span className="text-[10px] text-gray-600 font-normal">SOL</span>
+                                                </span>
+                                            </div>
+                                        </div>
                                     ))}
-                                </tbody>
-                            </table>
-                        </div>
+                                </div>
+                            </>
                         )}
                     </div>
 

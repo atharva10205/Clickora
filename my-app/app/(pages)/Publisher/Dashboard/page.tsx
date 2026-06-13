@@ -26,7 +26,7 @@ type Website = {
     revenue: number;
 };
 
-const DEFAULT_ACCENT = '#FFFFFF'; 
+const DEFAULT_ACCENT = '#FFFFFF';
 
 const hexToRgb = (hex: string) => {
     const safe = (hex ?? DEFAULT_ACCENT).replace(/[^0-9a-fA-F]/g, '').padEnd(6, '0');
@@ -317,6 +317,7 @@ const Dashboard = () => {
         enabled: status === 'authenticated',
     });
 
+    const [sidebarOpen, setSidebarOpen] = useState(false);
     const accent = dashboardQuery.data?.accent ?? DEFAULT_ACCENT;
     const websites = Array.isArray(websitesQuery.data) ? websitesQuery.data : [];
     const isLoading = dashboardQuery.isLoading || websitesQuery.isLoading;
@@ -325,8 +326,8 @@ const Dashboard = () => {
     if (isLoading) {
         return (
             <div className="flex h-screen bg-[#0a0a0a] text-gray-200">
-                <Sidebar activeTab={activeTab} />
-                <main className="flex-1 p-6 overflow-auto">
+                <Sidebar activeTab={activeTab} isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+                <main className="flex-1 p-4 sm:p-6 overflow-auto">
                     <div className="animate-pulse space-y-4">
                         <div className="h-72 bg-[#111] rounded-2xl border border-[#1a1a1a]" />
                         <div className="grid grid-cols-2 gap-4">
@@ -342,8 +343,8 @@ const Dashboard = () => {
     if (hasError) {
         return (
             <div className="flex h-screen bg-[#0a0a0a] text-gray-200">
-                <Sidebar activeTab={activeTab} />
-                <main className="flex-1 p-6 overflow-auto">
+                <Sidebar activeTab={activeTab} isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+                <main className="flex-1 p-4 sm:p-6 overflow-auto">
                     <div className="text-red-500 text-sm">Error loading data. Please try again.</div>
                 </main>
             </div>
@@ -357,10 +358,17 @@ const Dashboard = () => {
 
     return (
         <div className="flex h-screen bg-[#0a0a0a] text-gray-200 font-sans">
-            <Sidebar activeTab={activeTab} />
+            {sidebarOpen && (
+                <div
+                    className="fixed inset-0 bg-black/60 z-20 lg:hidden"
+                    onClick={() => setSidebarOpen(false)}
+                />
+            )}
 
-            <main className="flex-1 font-mono overflow-auto">
-                <div className="p-6 space-y-3">
+            <Sidebar activeTab={activeTab} isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+
+            <main className="flex-1 font-mono overflow-auto min-w-0">
+                <div className="p-4 sm:p-6 space-y-3">
 
                     <div className="bg-[#0d0d0d] border border-[#1c1c1c] rounded-2xl shadow-[0_8px_32px_rgba(0,0,0,0.6)]">
                         {websites.length === 0 ? (
@@ -381,9 +389,19 @@ const Dashboard = () => {
                         ) : (
                             <>
                                 <div className="flex items-center justify-between px-5 pt-5 pb-4 border-b border-[#1a1a1a]">
-                                    <div>
-                                        <h2 className="text-sm font-semibold font-mono text-white">Revenue</h2>
-                                        <p className="text-xs text-gray-600 font-mono mt-0.5">Per-site breakdown</p>
+                                    <div className="flex items-center gap-3">
+                                        <button
+                                            onClick={() => setSidebarOpen(true)}
+                                            className="lg:hidden flex flex-col gap-1 p-1.5 rounded-md hover:bg-[#161616] transition-colors flex-shrink-0"
+                                        >
+                                            <span className="w-4 h-px bg-gray-400" />
+                                            <span className="w-4 h-px bg-gray-400" />
+                                            <span className="w-4 h-px bg-gray-400" />
+                                        </button>
+                                        <div>
+                                            <h2 className="text-sm font-semibold font-mono text-white">Revenue</h2>
+                                            <p className="text-xs text-gray-600 font-mono mt-0.5">Per-site breakdown</p>
+                                        </div>
                                     </div>
                                     <div className="text-right">
                                         <p className="text-xs text-gray-600">{websites.length} {websites.length === 1 ? 'site' : 'sites'}</p>
@@ -391,10 +409,10 @@ const Dashboard = () => {
                                     </div>
                                 </div>
 
-                                <div className="flex gap-6 p-5" style={{ maxHeight: '20rem' }}>
+                                <div className="flex flex-col sm:flex-row gap-6 p-5" style={{ maxHeight: 'none' }}>
                                     <div
-                                        className="flex-1 min-w-10 overflow-y-auto space-y-5 pr-2"
-                                        style={{ scrollbarWidth: 'thin', scrollbarColor: '#2a2a2a transparent' }}
+                                        className="flex-1 min-w-0 overflow-y-auto space-y-5 pr-2"
+                                        style={{ maxHeight: '18rem', scrollbarWidth: 'thin', scrollbarColor: '#2a2a2a transparent' }}
                                     >
                                         {websites.map((site, idx) => (
                                             <SiteSpark
@@ -409,10 +427,11 @@ const Dashboard = () => {
                                         ))}
                                     </div>
 
-                                    <div className="w-px self-stretch bg-[#1c1c1c] flex-shrink-0" />
+                                    <div className="hidden sm:block w-px self-stretch bg-[#1c1c1c] flex-shrink-0" />
+                                    <div className="sm:hidden h-px w-full bg-[#1c1c1c]" />
 
                                     {totalEarningsSum > 0 && (
-                                        <div className="flex-shrink-0 flex flex-col items-center gap-3 w-36">
+                                        <div className="flex-shrink-0 flex sm:flex-col flex-row items-center gap-3 sm:w-36 w-full justify-center">
                                             <DonutChart websites={websites} total={totalEarningsSum} accent={accent} />
                                             <div
                                                 className="w-full space-y-2 overflow-y-auto"
@@ -443,16 +462,9 @@ const Dashboard = () => {
                     </div>
 
                     {websites.length > 0 && (
-                        <div
-                            className="flex gap-3 overflow-x-auto pb-1"
-                            style={{ scrollbarWidth: 'thin', scrollbarColor: '#2a2a2a transparent' }}
-                        >
-                            <div className="min-w-[340px] flex-1">
-                                <MetricChart websites={websites} metric="impressions" label="Impressions" color="#EDEDED" />
-                            </div>
-                            <div className="min-w-[340px] flex-1">
-                                <MetricChart websites={websites} metric="clicks" label="Clicks" color={accent} />
-                            </div>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <MetricChart websites={websites} metric="impressions" label="Impressions" color="#EDEDED" />
+                            <MetricChart websites={websites} metric="clicks" label="Clicks" color={accent} />
                         </div>
                     )}
 
@@ -462,7 +474,7 @@ const Dashboard = () => {
                                 <h2 className="text-sm font-semibold text-white">Sites</h2>
                             </div>
                             <div
-                                className="overflow-y-auto"
+                                className="hidden sm:block overflow-y-auto"
                                 style={{ maxHeight: '16rem', scrollbarWidth: 'thin', scrollbarColor: '#2a2a2a transparent' }}
                             >
                                 <table className="w-full">
@@ -488,19 +500,13 @@ const Dashboard = () => {
                                                     <p className="text-xs text-gray-600 truncate max-w-[180px]">{site.publisher_url}</p>
                                                 </td>
                                                 <td className="px-5 py-3.5 text-right text-sm text-gray-400 tabular-nums">
-                                                    {site.impressions > 0
-                                                        ? site.impressions >= 1000
-                                                            ? `${(site.impressions / 1000).toFixed(1)}K`
-                                                            : site.impressions
-                                                        : <span className="text-gray-700">—</span>}
+                                                    {site.impressions > 0 ? site.impressions >= 1000 ? `${(site.impressions / 1000).toFixed(1)}K` : site.impressions : <span className="text-gray-700">—</span>}
                                                 </td>
                                                 <td className="px-5 py-3.5 text-right text-sm text-gray-400 tabular-nums">
                                                     {site.clicks > 0 ? site.clicks.toLocaleString() : <span className="text-gray-700">—</span>}
                                                 </td>
                                                 <td className="px-5 py-3.5 text-right text-sm text-gray-400 tabular-nums">
-                                                    {site.impressions > 0 && site.clicks > 0
-                                                        ? `${((site.clicks / site.impressions) * 100).toFixed(2)}%`
-                                                        : <span className="text-gray-700">—</span>}
+                                                    {site.impressions > 0 && site.clicks > 0 ? `${((site.clicks / site.impressions) * 100).toFixed(2)}%` : <span className="text-gray-700">—</span>}
                                                 </td>
                                                 <td className="px-5 py-3.5 text-right text-sm font-semibold tabular-nums" style={{ color: accent }}>
                                                     {site.earnings.toFixed(4)}
@@ -509,6 +515,30 @@ const Dashboard = () => {
                                         ))}
                                     </tbody>
                                 </table>
+                            </div>
+
+                            <div className="sm:hidden divide-y divide-[#141414] overflow-y-auto" style={{ maxHeight: '20rem', scrollbarWidth: 'thin', scrollbarColor: '#2a2a2a transparent' }}>
+                                {websites.map((site, index) => (
+                                    <div key={`mobile-${site.name}-${index}`} className="px-4 py-3.5 hover:bg-[#111] transition-colors">
+                                        <div className="flex items-center justify-between mb-1.5">
+                                            <div className="flex items-center gap-2 min-w-0">
+                                                <span className="text-xs text-gray-700 tabular-nums w-4 flex-shrink-0">{index + 1}</span>
+                                                <p className="text-sm font-medium text-gray-200 truncate">{site.website_name}</p>
+                                            </div>
+                                            <span className="text-sm font-semibold tabular-nums flex-shrink-0 ml-2" style={{ color: accent }}>
+                                                {site.earnings.toFixed(4)} <span className="text-[10px] text-gray-600 font-normal">SOL</span>
+                                            </span>
+                                        </div>
+                                        <p className="text-xs text-gray-600 truncate mb-1.5">{site.publisher_url}</p>
+                                        <div className="flex items-center gap-3 text-xs text-gray-600">
+                                            <span>{site.impressions > 0 ? `${site.impressions >= 1000 ? `${(site.impressions / 1000).toFixed(1)}K` : site.impressions} impr` : '— impr'}</span>
+                                            <span>·</span>
+                                            <span>{site.clicks > 0 ? `${site.clicks} clicks` : '— clicks'}</span>
+                                            <span>·</span>
+                                            <span>{site.impressions > 0 && site.clicks > 0 ? `${((site.clicks / site.impressions) * 100).toFixed(2)}% CTR` : '—'}</span>
+                                        </div>
+                                    </div>
+                                ))}
                             </div>
                         </div>
                     )}

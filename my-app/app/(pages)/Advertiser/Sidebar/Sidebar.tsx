@@ -1,12 +1,13 @@
 'use client'
 import React from 'react';
 import { useRouter } from 'next/navigation';
-import { LayoutDashboard, Target, Wallet, BarChart3, Settings, HelpCircle } from 'lucide-react';
+import { LayoutDashboard, Target, Wallet, BarChart3, Settings, HelpCircle, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
-
 interface SidebarProps {
   activeTab: string;
   SidebarAccent?: string;
+  isOpen?: boolean;
+  onClose?: () => void;
 }
 
 interface SidebarData {
@@ -16,7 +17,7 @@ interface SidebarData {
   accent: string;
 }
 
-const Sidebar = ({ activeTab, SidebarAccent }: SidebarProps) => {
+const Sidebar = ({ activeTab, SidebarAccent, isOpen, onClose }: SidebarProps) => {
   const router = useRouter();
   const [sidebarData, setSidebarData] = useState<SidebarData | null>(null);
 
@@ -113,10 +114,19 @@ const Sidebar = ({ activeTab, SidebarAccent }: SidebarProps) => {
       </button>
     );
   };
-
-  return (
-    <aside className="w-56 bg-[#0c0c0c] border-r border-[#1f1f1f] flex flex-col flex-shrink-0">
-
+return (
+    <aside className={`
+      fixed lg:static inset-y-0 left-0 z-30
+      w-56 bg-[#0c0c0c] border-r border-[#1f1f1f] flex flex-col flex-shrink-0
+      transition-transform duration-200
+      ${isOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
+    `}>
+      <button
+        onClick={onClose}
+        className="lg:hidden absolute top-4 right-4 text-gray-500 hover:text-gray-200 z-10"
+      >
+        <X className="w-4 h-4" />
+      </button>
       <div className="px-4 py-4 border-b border-[#1a1a1a]">
         <div className="flex items-center gap-2.5">
           <div className="w-7 h-7 rounded-md bg-[#1a1a1a] border border-[#2a2a2a] flex items-center justify-center overflow-hidden flex-shrink-0">

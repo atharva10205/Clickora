@@ -24,6 +24,7 @@ const Settings = () => {
     const [accentSaved, setAccentSaved] = useState(false);
     const [showDeleteModal, setShowDeleteModal] = useState(false);
     const [deleteEmailInput, setDeleteEmailInput] = useState("");
+    const [sidebarOpen, setSidebarOpen] = useState(false);
     const ACCENT = accent;
 
     const hAlpha = (op: number) => {
@@ -71,10 +72,10 @@ const Settings = () => {
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ role: newRole }),
             });
-           if (res.ok) {
-    await fetch('/api/auth/session', { method: 'GET' });
-    window.location.href = newRole === 'advertiser' ? '/Advertiser/Dashboard' : '/Publisher/Dashboard';
-}
+            if (res.ok) {
+                await fetch('/api/auth/session', { method: 'GET' });
+                window.location.href = newRole === 'advertiser' ? '/Advertiser/Dashboard' : '/Publisher/Dashboard';
+            }
         } catch (error) {
             console.error('Failed to switch role:', error);
         } finally {
@@ -128,14 +129,31 @@ const Settings = () => {
 
     return (
         <div className="flex h-screen bg-[#0a0a0a] text-gray-300">
-            <Sidebar activeTab={activeTab} SidebarAccent={accent} />
+            {sidebarOpen && (
+                <div
+                    className="fixed inset-0 bg-black/60 z-20 lg:hidden"
+                    onClick={() => setSidebarOpen(false)}
+                />
+            )}
 
-            <main className="flex-1 p-8 overflow-y-auto">
+            <Sidebar activeTab={activeTab} SidebarAccent={accent} isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+
+            <main className="flex-1 p-4 sm:p-8 overflow-y-auto">
                 <div className="max-w-6xl">
 
-                    <div className="mb-10">
-                        <h1 className="text-3xl font-bold mb-1 font-mono text-white tracking-tight">Settings</h1>
-                        <p className="text-gray-600 font-mono text-sm">Manage your advertiser account</p>
+                    <div className="mb-8 sm:mb-10 flex items-center gap-3">
+                        <button
+                            onClick={() => setSidebarOpen(true)}
+                            className="lg:hidden flex flex-col gap-1 p-1.5 rounded-md hover:bg-[#161616] transition-colors flex-shrink-0"
+                        >
+                            <span className="w-4 h-px bg-gray-400" />
+                            <span className="w-4 h-px bg-gray-400" />
+                            <span className="w-4 h-px bg-gray-400" />
+                        </button>
+                        <div>
+                            <h1 className="text-lg sm:text-3xl font-bold mb-0.5 font-mono text-white tracking-tight">Settings</h1>
+                            <p className="text-gray-600 font-mono text-xs sm:text-sm hidden sm:block">Manage your advertiser account</p>
+                        </div>
                     </div>
 
                     <div className="grid gap-5">
@@ -152,12 +170,11 @@ const Settings = () => {
                                 </div>
                             </div>
                             <div className="p-6">
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div className="grid grid-cols-2 gap-3">
                                     <button
                                         onClick={() => handleRoleSwitch('advertiser')}
                                         disabled={isSwitching}
-                                        className="relative p-6 rounded-xl font-mono text-left transition-all duration-200 hover:-translate-y-0.5"
-                                        style={{
+                                        className="relative p-4 sm:p-6 rounded-xl font-mono text-left transition-all duration-200 hover:-translate-y-0.5" style={{
                                             background: '#0d0d0d',
                                             border: `1px solid ${currentRole === 'advertiser' ? ACCENT : alpha(0.15)}`,
                                             boxShadow: currentRole === 'advertiser' ? `0 0 24px ${hAlpha(0.12)}` : 'none',
@@ -174,13 +191,13 @@ const Settings = () => {
                                                 </svg>
                                             </div>
                                         )}
-                                        <div className="flex items-start gap-4">
-                                            <div className="p-2.5 rounded-lg bg-[#161616] border border-gray-800/60">
+                                        <div className="flex flex-col gap-3">
+                                            <div className="p-2.5 rounded-lg bg-[#161616] border border-gray-800/60 w-fit">
                                                 <Target className="w-5 h-5 text-gray-400" />
                                             </div>
                                             <div>
-                                                <h3 className="text-base font-semibold text-white mb-1">Advertiser</h3>
-                                                <p className="text-xs text-gray-600">Create ads, set budgets, and track campaign performance</p>
+                                                <h3 className="text-sm font-semibold text-white mb-1">Advertiser</h3>
+                                                <p className="text-xs text-gray-600 hidden sm:block">Create ads, set budgets, and track campaign performance</p>
                                             </div>
                                         </div>
                                     </button>
@@ -188,8 +205,7 @@ const Settings = () => {
                                     <button
                                         onClick={() => handleRoleSwitch('publisher')}
                                         disabled={isSwitching}
-                                        className="relative p-6 rounded-xl text-left font-mono transition-all duration-200 hover:-translate-y-0.5"
-                                        style={{
+                                        className="relative p-4 sm:p-6 rounded-xl text-left font-mono transition-all duration-200 hover:-translate-y-0.5" style={{
                                             background: '#0d0d0d',
                                             border: `1px solid ${currentRole === 'publisher' ? ACCENT : alpha(0.15)}`,
                                             boxShadow: currentRole === 'publisher' ? `0 0 24px ${hAlpha(0.12)}` : 'none',
@@ -206,13 +222,13 @@ const Settings = () => {
                                                 </svg>
                                             </div>
                                         )}
-                                        <div className="flex items-start gap-4">
-                                            <div className="p-2.5 rounded-lg bg-[#161616] border border-gray-800/60">
+                                        <div className="flex flex-col gap-3">
+                                            <div className="p-2.5 rounded-lg bg-[#161616] border border-gray-800/60 w-fit">
                                                 <TrendingUp className="w-5 h-5 text-gray-400" />
                                             </div>
                                             <div>
-                                                <h3 className="text-base font-semibold text-white mb-1">Publisher</h3>
-                                                <p className="text-xs text-gray-600">Display ads on your site and earn revenue from clicks</p>
+                                                <h3 className="text-sm font-semibold text-white mb-1">Publisher</h3>
+                                                <p className="text-xs text-gray-600 hidden sm:block">Display ads on your site and earn revenue from clicks</p>
                                             </div>
                                         </div>
                                     </button>
@@ -269,8 +285,8 @@ const Settings = () => {
                         </div>
 
                         <div className="bg-[#111111] border border-gray-800/70 rounded-xl overflow-hidden">
-                            <div className="px-6 py-5 border-b border-gray-800/60 flex items-center justify-between">
-                                <div className="flex items-center gap-3">
+                            <div className="px-4 sm:px-6 py-4 sm:py-5 border-b border-gray-800/60 flex items-center justify-between gap-3">
+                                <div className="flex items-center gap-3 min-w-0">
                                     <div className="p-2 rounded-lg bg-[#161616] border border-gray-800/60">
                                         <Palette className="w-4 h-4 text-gray-400" />
                                     </div>
@@ -279,14 +295,15 @@ const Settings = () => {
                                         <p className="text-xs text-gray-600 font-mono mt-0.5">Choose your dashboard highlight colour</p>
                                     </div>
                                 </div>
-                                <div className="flex items-center gap-2.5">
+                                <div className="flex items-center gap-2 flex-shrink-0">
                                     {accentSaved && (
                                         <span className="text-xs text-gray-400 font-mono flex items-center gap-1">
-                                            <Check className="w-3 h-3" /> Saved
+                                            <Check className="w-3 h-3" />
+                                            <span className="hidden sm:inline">Saved</span>
                                         </span>
                                     )}
-                                    <div className="w-5 h-5 rounded border border-gray-700" style={{ background: ACCENT }} />
-                                    <span className="text-xs text-gray-500 font-mono">{ACCENT}</span>
+                                    <div className="w-5 h-5 rounded border border-gray-700 flex-shrink-0" style={{ background: ACCENT }} />
+                                    <span className="text-xs text-gray-500 font-mono hidden sm:inline">{ACCENT}</span>
                                 </div>
                             </div>
                             <div className="p-6">
@@ -328,14 +345,14 @@ const Settings = () => {
                         </div>
 
                         <div className="bg-[#111111] border border-gray-800/70 rounded-xl overflow-hidden">
-                            <div className="p-6 flex items-center justify-between">
-                                <div>
+                            <div className="p-4 sm:p-6 flex items-center justify-between gap-3">
+                                <div className="min-w-0">
                                     <p className="text-sm text-gray-300 font-medium">Sign Out</p>
-                                    <p className="text-xs text-gray-600 mt-0.5">Sign out of your account on this device</p>
+                                    <p className="text-xs text-gray-600 mt-0.5 hidden sm:block">Sign out of your account on this device</p>
                                 </div>
                                 <button
                                     onClick={() => signOut({ callbackUrl: '/' })}
-                                    className="flex cursor-pointer items-center gap-2 px-4 py-2.5 rounded-lg bg-[#161616] border border-gray-800/60 text-gray-300 text-sm font-semibold hover:border-gray-600 hover:text-white transition-all duration-150"
+                                    className="flex-shrink-0 flex cursor-pointer items-center gap-2 px-3 sm:px-4 py-2.5 rounded-lg bg-[#161616] border border-gray-800/60 text-gray-300 text-sm font-semibold hover:border-gray-600 hover:text-white transition-all duration-150 whitespace-nowrap"
                                 >
                                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
@@ -356,17 +373,17 @@ const Settings = () => {
                                     <p className="text-xs text-gray-600 mt-0.5">Irreversible actions — proceed with caution</p>
                                 </div>
                             </div>
-                            <div className="p-6 flex items-center justify-between">
-                                <div>
+                            <div className="p-4 sm:p-6 flex items-center justify-between gap-3">
+                                <div className="min-w-0">
                                     <p className="text-sm text-gray-300 font-medium">Delete Account</p>
-                                    <p className="text-xs text-gray-600 mt-0.5">Permanently delete your account and all associated data</p>
+                                    <p className="text-xs text-gray-600 mt-0.5 hidden sm:block">Permanently delete your account and all associated data</p>
                                 </div>
                                 <button
                                     onClick={() => setShowDeleteModal(true)}
-                                    className="flex items-center gap-2 px-4 py-2.5 rounded-lg bg-red-950/40 border border-red-900/40 text-red-400 text-sm font-semibold hover:bg-red-950/70 hover:border-red-800/60 transition-all duration-150"
+                                    className="flex-shrink-0 flex items-center gap-2 px-3 sm:px-4 py-2.5 rounded-lg bg-red-950/40 border border-red-900/40 text-red-400 text-sm font-semibold hover:bg-red-950/70 hover:border-red-800/60 transition-all duration-150 whitespace-nowrap"
                                 >
                                     <Trash2 className="w-4 h-4" />
-                                    Delete Account
+                                    <span className="hidden sm:inline">Delete Account</span>
                                 </button>
                             </div>
                         </div>

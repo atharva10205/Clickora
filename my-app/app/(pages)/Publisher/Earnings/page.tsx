@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { BarChart3, ArrowDownRight, DollarSign, Download, TrendingUp, Pencil, Wallet, Clock, Hash, AlertCircle, X, ArrowDownToLine } from 'lucide-react';
 import Sidebar from '../sidebar/sidebar';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -90,7 +90,7 @@ function ToastNotification({ toast, onDismiss }: { toast: Toast; onDismiss: (id:
 
     return (
         <div
-            className={`flex items-start gap-3 bg-[#161616] border ${style.border} rounded-xl px-4 py-3 shadow-2xl shadow-black/50 min-w-[300px] max-w-[380px]`}
+            className={`flex items-start gap-3 bg-[#161616] border ${style.border} rounded-xl px-4 py-3 shadow-2xl shadow-black/50 w-[calc(100vw-2rem)] max-w-[380px]`}
             style={{ animation: 'slideIn 0.3s ease-out' }}
         >
             <div className={`mt-0.5 flex-shrink-0 w-7 h-7 ${style.bg} border ${style.borderIcon} rounded-full flex items-center justify-center`}>
@@ -98,7 +98,7 @@ function ToastNotification({ toast, onDismiss }: { toast: Toast; onDismiss: (id:
             </div>
             <div className="flex-1 min-w-0">
                 <p className="text-sm font-semibold text-gray-200">{style.title}</p>
-                <p className="text-xs text-gray-500 mt-0.5 leading-relaxed font-mono">{toast.message}</p>
+                <p className="text-xs text-gray-500 mt-0.5 leading-relaxed font-mono break-words">{toast.message}</p>
             </div>
             <button onClick={() => onDismiss(toast.id)} className="flex-shrink-0 text-gray-600 hover:text-gray-300 transition-colors mt-0.5">
                 <X className="w-3.5 h-3.5" />
@@ -119,11 +119,11 @@ function ToastContainer({ toasts, onDismiss }: { toasts: Toast[]; onDismiss: (id
 
 const WithdrawModal = ({ accent }: { accent: string }) => (
     <div
-        className="fixed inset-0 z-50 flex items-center justify-center"
+        className="fixed inset-0 z-50 flex items-center justify-center px-4"
         style={{ background: 'rgba(0,0,0,0.82)', backdropFilter: 'blur(8px)' }}
     >
         <div
-            className="flex flex-col items-center w-[340px] rounded-2xl px-8 py-10"
+            className="flex flex-col items-center w-full max-w-[340px] rounded-2xl px-6 sm:px-8 py-8 sm:py-10"
             style={{ background: '#111111', border: '1px solid rgba(255,255,255,0.08)' }}
         >
             <div className="relative w-14 h-14 mb-7">
@@ -144,11 +144,10 @@ const WithdrawModal = ({ accent }: { accent: string }) => (
             <p className="text-white font-mono font-medium text-sm tracking-tight mb-1.5">
                 Processing withdrawal
             </p>
-            <p className="font-mono text-xs mb-8" style={{ color: 'rgba(255,255,255,0.3)', letterSpacing: '0.04em' }}>
+            <p className="font-mono text-xs mb-8 text-center" style={{ color: 'rgba(255,255,255,0.3)', letterSpacing: '0.04em' }}>
                 Signing &amp; confirming on-chain
             </p>
 
-            {/* Status card */}
             <div
                 className="w-full rounded-xl p-4 flex flex-col gap-3 mb-6"
                 style={{ background: '#0d0d0d', border: '1px solid rgba(255,255,255,0.05)' }}
@@ -195,6 +194,7 @@ const Earnings = () => {
     const router = useRouter();
     const [withdrawing, setWithdrawing] = React.useState(false);
     const [toasts, setToasts] = React.useState<Toast[]>([]);
+    const [sidebarOpen, setSidebarOpen] = useState(false);
 
     const addToast = (message: string, type: Toast['type'] = 'error') =>
         setToasts(prev => [...prev, { id: Date.now(), message, type }]);
@@ -298,10 +298,6 @@ const Earnings = () => {
                     [Buffer.from("vault"), advertiserPubkey.toBuffer(), adIdBytes],
                     program.programId
                 );
-                // const [earningsPda] = PublicKey.findProgramAddressSync(
-                //     [Buffer.from("earnings"), adPda.toBuffer(), publisherPubkey.toBuffer()],
-                //     program.programId
-                // );
 
                 const ix = await program.methods.claim(new BN(e.claimable_amount)).accounts({
                     vault: vaultPda,
@@ -375,25 +371,49 @@ const Earnings = () => {
                     to   { opacity: 1; transform: translateX(0); }
                 }
             `}</style>
+
             <div className="flex h-screen overflow-hidden bg-[#0a0a0a] text-gray-300">
                 {withdrawing && <WithdrawModal accent={ACCENT} />}
 
-                <Sidebar activeTab={activeTab} />
+                {/* Overlay */}
+                {sidebarOpen && (
+                    <div
+                        className="fixed inset-0 bg-black/60 z-20 lg:hidden"
+                        onClick={() => setSidebarOpen(false)}
+                    />
+                )}
 
-                <main className="flex-1 p-8 overflow-y-auto">
-                    <div className="max-w-6xl">
+                <Sidebar activeTab={activeTab} isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
 
-                        <div className="flex items-center justify-between mb-10">
-                            <div>
-                                <h1 className="text-3xl font-bold mb-1 text-white tracking-tight font-mono">Earnings</h1>
-                                <p className="text-gray-600 text-sm font-mono">Track your revenue and payments</p>
+                <main className="flex-1 overflow-y-auto min-w-0">
+                    <div className="px-4 sm:px-6 lg:px-8 py-6 sm:py-8 max-w-6xl mx-auto">
+
+                        {/* Header */}
+                        <div className="flex items-center justify-between mb-8 sm:mb-10 gap-4">
+                            <div className="flex items-center gap-3 min-w-0">
+                                {/* Mobile hamburger */}
+                                <button
+                                    className="lg:hidden p-2 rounded-lg bg-[#161616] border border-white/10 text-gray-400 hover:text-gray-200 shrink-0"
+                                    onClick={() => setSidebarOpen(true)}
+                                    aria-label="Open sidebar"
+                                >
+                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                                    </svg>
+                                </button>
+                                <div>
+                                    <h1 className="text-2xl sm:text-3xl font-bold mb-0.5 text-white tracking-tight font-mono">Earnings</h1>
+                                    <p className="text-gray-600 text-xs sm:text-sm font-mono hidden sm:block">Track your revenue and payments</p>
+                                </div>
                             </div>
                         </div>
 
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-8">
+                        {/* Top cards */}
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-5 mb-6 sm:mb-8">
 
+                            {/* Balance card */}
                             <div
-                                className="bg-[#111111] p-8 rounded-xl transition-all duration-200"
+                                className="bg-[#111111] p-5 sm:p-8 rounded-xl transition-all duration-200"
                                 style={{ border: `1px solid ${alpha(0.08)}` }}
                                 onMouseEnter={e => {
                                     (e.currentTarget as HTMLElement).style.boxShadow = `0 0 32px ${hAlpha(0.1)}`;
@@ -404,16 +424,16 @@ const Earnings = () => {
                                 }}
                             >
                                 <p className="text-xs text-gray-600 uppercase tracking-widest mb-3 font-mono">Estimated Total Balance</p>
-                                <p className="text-5xl font-bold text-white font-mono tabular-nums mb-1">
+                                <p className="text-4xl sm:text-5xl font-bold text-white font-mono tabular-nums mb-1 break-all">
                                     {totalBalanceSOL.toFixed(4)}
-                                    <span className="text-2xl text-gray-500 ml-2 font-mono">SOL</span>
+                                    <span className="text-xl sm:text-2xl text-gray-500 ml-2 font-mono">SOL</span>
                                 </p>
-                                <p className="text-xs text-gray-600 mb-8 font-mono"></p>
+                                <p className="text-xs text-gray-600 mb-6 sm:mb-8 font-mono"></p>
 
                                 <button
                                     onClick={Withdraw_BTN}
                                     disabled={withdrawing}
-                                    className="flex cursor-pointer items-center gap-2 px-6 py-3 rounded-xl bg-[#161616] text-gray-200 text-sm font-semibold font-mono hover:-translate-y-0.5 active:translate-y-0 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed disabled:translate-y-0"
+                                    className="flex cursor-pointer items-center gap-2 px-5 py-2.5 sm:px-6 sm:py-3 rounded-xl bg-[#161616] text-gray-200 text-sm font-semibold font-mono hover:-translate-y-0.5 active:translate-y-0 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed disabled:translate-y-0"
                                     style={{ border: `1px solid ${alpha(0.18)}` }}
                                     onMouseEnter={e => {
                                         if (withdrawing) return;
@@ -431,15 +451,15 @@ const Earnings = () => {
                                     Withdraw
                                 </button>
 
-                                <div className="mt-8">
+                                <div className="mt-6 sm:mt-8">
                                     <p className="text-xs text-gray-600 uppercase tracking-widest mb-1.5 font-mono">Receiver's address</p>
                                     <div className="flex items-center gap-2">
-                                        <span className="text-white font-mono text-xs truncate max-w-[260px]">
+                                        <span className="text-white font-mono text-xs truncate max-w-[200px] sm:max-w-[260px]">
                                             {fetchquery.data?.publisher?.wallet_address}
                                         </span>
                                         <button
                                             onClick={() => router.push('/Publisher/Settings')}
-                                            className="flex items-center cursor-pointer gap-1 text-gray-600 hover:text-gray-300 transition-colors duration-150 ml-1 group"
+                                            className="flex items-center cursor-pointer gap-1 text-gray-600 hover:text-gray-300 transition-colors duration-150 ml-1 group shrink-0"
                                         >
                                             <Pencil className="w-3 h-3" />
                                             <span className="text-xs group-hover:underline font-mono">Edit</span>
@@ -448,8 +468,9 @@ const Earnings = () => {
                                 </div>
                             </div>
 
+                            {/* Overview card */}
                             <div
-                                className="bg-[#111111] p-8 rounded-xl transition-all duration-200"
+                                className="bg-[#111111] p-5 sm:p-8 rounded-xl transition-all duration-200"
                                 style={{ border: `1px solid ${alpha(0.08)}` }}
                                 onMouseEnter={e => {
                                     (e.currentTarget as HTMLElement).style.boxShadow = `0 0 32px ${hAlpha(0.1)}`;
@@ -459,52 +480,51 @@ const Earnings = () => {
                                     (e.currentTarget as HTMLElement).style.boxShadow = 'none';
                                 }}
                             >
-                                <p className="text-xs text-gray-600 uppercase tracking-widest mb-6 font-mono">Earnings Overview</p>
+                                <p className="text-xs text-gray-600 uppercase tracking-widest mb-4 sm:mb-6 font-mono">Earnings Overview</p>
                                 <div className="space-y-3">
-
-                                    <div className="flex items-center justify-between p-4 bg-[#0d0d0d] border border-gray-800/50 rounded-lg">
+                                    <div className="flex items-center justify-between p-3 sm:p-4 bg-[#0d0d0d] border border-gray-800/50 rounded-lg">
                                         <div>
-                                            <p className="text-xs text-gray-600 uppercase tracking-widest mb-1.5 text-mono">Claimable Now</p>
-                                            <p className="text-xl font-bold text-white font-mono tabular-nums">
+                                            <p className="text-xs text-gray-600 uppercase tracking-widest mb-1 sm:mb-1.5 font-mono">Claimable Now</p>
+                                            <p className="text-lg sm:text-xl font-bold text-white font-mono tabular-nums">
                                                 +{totalBalanceSOL.toFixed(4)} SOL
                                             </p>
                                         </div>
-                                        <TrendingUp className="w-6 h-6 text-gray-500" />
+                                        <TrendingUp className="w-5 h-5 sm:w-6 sm:h-6 text-gray-500 shrink-0" />
                                     </div>
 
-                                    <div className="flex items-center justify-between p-4 bg-[#0d0d0d] border border-gray-800/50 rounded-lg">
+                                    <div className="flex items-center justify-between p-3 sm:p-4 bg-[#0d0d0d] border border-gray-800/50 rounded-lg">
                                         <div>
-                                            <p className="text-xs text-gray-600 uppercase tracking-widest mb-1.5 text-mono">Total Claimed</p>
-                                            <p className="text-xl font-bold text-white font-mono tabular-nums">
+                                            <p className="text-xs text-gray-600 uppercase tracking-widest mb-1 sm:mb-1.5 font-mono">Total Claimed</p>
+                                            <p className="text-lg sm:text-xl font-bold text-white font-mono tabular-nums">
                                                 {totalEarned.toFixed(4)} SOL
                                             </p>
                                         </div>
-                                        <BarChart3 className="w-6 h-6 text-gray-500" />
+                                        <BarChart3 className="w-5 h-5 sm:w-6 sm:h-6 text-gray-500 shrink-0" />
                                     </div>
 
-                                    <div className="flex items-center justify-between p-4 bg-[#0d0d0d] border border-gray-800/50 rounded-lg">
+                                    <div className="flex items-center justify-between p-3 sm:p-4 bg-[#0d0d0d] border border-gray-800/50 rounded-lg">
                                         <div>
-                                            <p className="text-xs text-gray-600 uppercase tracking-widest mb-1.5 text-mono">Total Transactions</p>
-                                            <p className="text-xl font-bold text-white font-mono tabular-nums">
+                                            <p className="text-xs text-gray-600 uppercase tracking-widest mb-1 sm:mb-1.5 font-mono">Total Transactions</p>
+                                            <p className="text-lg sm:text-xl font-bold text-white font-mono tabular-nums">
                                                 {transactionList.length}
                                             </p>
                                         </div>
-                                        <DollarSign className="w-6 h-6 text-gray-500" />
+                                        <DollarSign className="w-5 h-5 sm:w-6 sm:h-6 text-gray-500 shrink-0" />
                                     </div>
-
                                 </div>
                             </div>
                         </div>
 
+                        {/* Transaction history */}
                         <div className="bg-[#111111] border border-gray-800/70 rounded-xl overflow-hidden">
 
-                            <div className="px-6 py-5 border-b border-gray-800/60 flex items-center justify-between">
-                                <div>
-                                    <h2 className="text-sm font-semibold text-gray-200 uppercase tracking-widest font-mono">Transaction History</h2>
-                                    <p className="text-xs text-gray-600 mt-0.5 font-mono">All claimed earnings grouped by session</p>
+                            <div className="px-4 sm:px-6 py-4 sm:py-5 border-b border-gray-800/60 flex items-center justify-between gap-3">
+                                <div className="min-w-0">
+                                    <h2 className="text-xs sm:text-sm font-semibold text-gray-200 uppercase tracking-widest font-mono">Transaction History</h2>
+                                    <p className="text-xs text-gray-600 mt-0.5 font-mono hidden sm:block">All claimed earnings grouped by session</p>
                                 </div>
-                                <span className="text-xs text-gray-600 font-mono bg-[#161616] border border-gray-800/60 px-3 py-1 rounded-lg">
-                                    {transactionList.length} transactions
+                                <span className="text-xs text-gray-600 font-mono bg-[#161616] border border-gray-800/60 px-3 py-1 rounded-lg shrink-0">
+                                    {transactionList.length} txns
                                 </span>
                             </div>
 
@@ -518,32 +538,34 @@ const Earnings = () => {
                                     {transactionList.map((tx, idx) => (
                                         <div
                                             key={idx}
-                                            className="px-6 py-5 hover:bg-[#161616]/60 transition-colors duration-150 cursor-pointer group"
+                                            className="px-4 sm:px-6 py-4 sm:py-5 hover:bg-[#161616]/60 transition-colors duration-150 cursor-pointer group"
                                         >
-                                            <div className="flex items-center justify-between">
-                                                <div className="flex items-center gap-4">
-                                                    <div className="p-2.5 rounded-lg bg-[#161616] border border-gray-800/60 group-hover:border-gray-700 transition-colors">
-                                                        <ArrowDownRight className="w-4 h-4 text-gray-400" />
+                                            <div className="flex items-start sm:items-center justify-between gap-3">
+                                                <div className="flex items-start sm:items-center gap-3 sm:gap-4 min-w-0">
+                                                    <div className="p-2 sm:p-2.5 rounded-lg bg-[#161616] border border-gray-800/60 group-hover:border-gray-700 transition-colors shrink-0">
+                                                        <ArrowDownRight className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-gray-400" />
                                                     </div>
-                                                    <div>
+                                                    <div className="min-w-0">
                                                         <p className="text-sm font-semibold text-gray-200 mb-1 font-mono">Revenue</p>
-                                                        <div className="flex items-center gap-2 text-xs text-gray-600 font-mono">
+                                                        {/* Stack meta on mobile, inline on sm+ */}
+                                                        <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2 text-xs text-gray-600 font-mono">
                                                             <span className="flex items-center gap-1">
-                                                                <Hash className="w-3 h-3" />
+                                                                <Hash className="w-3 h-3 shrink-0" />
                                                                 {tx.ad_id.slice(0, 8)}…
                                                             </span>
-                                                            <span className="text-gray-800">•</span>
+                                                            <span className="hidden sm:inline text-gray-800">•</span>
                                                             <span className="flex items-center gap-1">
-                                                                <Clock className="w-3 h-3" />
+                                                                <Clock className="w-3 h-3 shrink-0" />
                                                                 {formatTimestamp(tx.timestamp)}
                                                             </span>
-                                                            <span className="text-gray-800">•</span>
+                                                            <span className="hidden sm:inline text-gray-800">•</span>
                                                             <span>{tx.click_count} click{tx.click_count !== 1 ? 's' : ''}</span>
                                                         </div>
                                                     </div>
                                                 </div>
-                                                <div className="text-right">
-                                                    <p className="text-base font-bold text-white font-mono tabular-nums mb-1">
+
+                                                <div className="text-right shrink-0">
+                                                    <p className="text-sm sm:text-base font-bold text-white font-mono tabular-nums mb-1">
                                                         +{tx.earnings.toFixed(6)} SOL
                                                     </p>
                                                     <span

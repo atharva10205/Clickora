@@ -2,7 +2,7 @@
 
 import { useParams, useRouter } from 'next/navigation';
 import { useState, useEffect } from 'react';
-import { Trash2, Pencil, Save, X, MousePointer, Eye, TrendingUp, Wallet, ArrowDownToLine, AlertTriangle, ChevronLeft, Plus, Minus, Loader2 } from 'lucide-react';
+import { Trash2, Pencil, Save, X, MousePointer, Eye, TrendingUp, Wallet, ArrowDownToLine, AlertTriangle, ChevronLeft, Plus, Minus, Loader2, MoreVertical } from 'lucide-react';
 import BN from "bn.js";
 import { Connection, PublicKey, SystemProgram } from "@solana/web3.js";
 import * as anchor from "@coral-xyz/anchor";
@@ -81,6 +81,7 @@ const CampaignPage = () => {
     const [depositing, setDepositing] = useState(false);
     const [addFundsSuccess, setAddFundsSuccess] = useState(false);
     const [addFundsDepositedSOL, setAddFundsDepositedSOL] = useState<string>('');
+    const [showMobileMenu, setShowMobileMenu] = useState(false);
 
     const connection = new Connection(process.env.NEXT_PUBLIC_RPC_URL!);
     const { connection: walletConnection } = useConnection();
@@ -117,7 +118,6 @@ const CampaignPage = () => {
 
             const { adPDA, vaultPDA } = getPDA(advertiserKey, AdId);
 
-
             const tx = await program.methods
                 .deposit(new BN(totalWithFee))
                 .accounts({
@@ -145,7 +145,6 @@ const CampaignPage = () => {
             });
 
             await refreshData();
-
             setAddFundsDepositedSOL((totalWithFee / 1e9).toFixed(6));
             setAddFundsSuccess(true);
         } catch (err: any) {
@@ -160,6 +159,7 @@ const CampaignPage = () => {
         setAddClicksInput('100');
         setAddFundsSuccess(false);
         setShowAddFundsModal(true);
+        setShowMobileMenu(false);
     };
 
     const closeAddFundsModal = () => {
@@ -187,7 +187,6 @@ const CampaignPage = () => {
             setImageUrl(adData.imageUrl ?? '');
             setWallet_Address(adData.wallet_address ?? '');
             setUnclaimedClicks(analyticsData.unclaimedClicks ?? 0);
-
             setVaultBalance((adData.RemainingAmount ?? 0) / 1e9);
         } catch (err) {
             console.error("Fetch failed:", err);
@@ -201,6 +200,7 @@ const CampaignPage = () => {
         };
         init();
     }, [id]);
+
     const removeTag = (tag: string) => setSelectedTags(prev => prev.filter(t => t !== tag));
 
     const handleSave = async () => {
@@ -294,7 +294,6 @@ const CampaignPage = () => {
             });
 
             await refreshData();
-
             setShowWithdrawModal(false);
             setWithdrawAddress('');
             setWithdrawnAmount((withdrawableLamports / 1e9).toFixed(6));
@@ -335,6 +334,7 @@ const CampaignPage = () => {
 
     const handleDeleteClick = async () => {
         if (!Wallet_Address || !ad?.id) return;
+        setShowMobileMenu(false);
 
         const res = await fetch(`/api/crud/Advertiser/Advertiser-campaign/${id}`);
         const data = await res.json();
@@ -353,6 +353,7 @@ const CampaignPage = () => {
 
         setShowDeleteModal(true);
     };
+
     if (loading) return (
         <div className="flex h-screen bg-[#0a0a0a] items-center justify-center">
             <div className="w-5 h-5 border-2 border-gray-800 border-t-gray-400 rounded-full animate-spin" />
@@ -373,6 +374,7 @@ const CampaignPage = () => {
         { label: 'Remaining Budget', value: vaultBalance !== null ? `${vaultBalance.toFixed(4)} SOL` : '—', icon: ArrowDownToLine, sub: 'in vault' },
         { label: 'Remaining Clicks', value: remainingClicks !== null ? remainingClicks.toLocaleString() : '—', icon: MousePointer, sub: 'clicks left' },
     ] : [];
+
     const textFields = [
         { label: 'Business Name', value: businessName, set: setBusinessName, placeholder: 'Your business name' },
         { label: 'Title', value: title, set: setTitle, placeholder: 'Ad headline' },
@@ -392,20 +394,29 @@ const CampaignPage = () => {
                 .fade-up-4 { animation: fadeUp 0.4s 0.2s ease both; }
                 input:focus { outline: none; }
                 .stat-card:hover .stat-icon { opacity: 1; transform: scale(1.1); }
+                /* Hide number input spinners */
+                input[type=number]::-webkit-inner-spin-button,
+                input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+                input[type=number] { -moz-appearance: textfield; }
             `}</style>
 
+            {/* ── NAVBAR ── */}
             <div className="sticky top-0 z-30 bg-[#080808]/90 backdrop-blur-md border-b border-white/[0.04]">
-                <div className="max-w-5xl mx-auto px-8 h-14 flex items-center justify-between">
+                <div className="max-w-5xl mx-auto px-4 sm:px-8 h-14 flex items-center justify-between gap-2">
+
+                    {/* Left: back button */}
                     <button
                         onClick={() => router.back()}
-                        className="flex cursor-pointer items-center gap-2 text-xs text-gray-600 hover:text-gray-300 transition-colors duration-150"
+                        className="flex cursor-pointer items-center gap-1.5 text-xs text-gray-600 hover:text-gray-300 transition-colors duration-150 shrink-0"
                     >
                         <ChevronLeft className="w-3.5 h-3.5" />
-                        Back
+                        <span className="hidden sm:inline">Back</span>
                     </button>
 
-                    <div className="flex items-center gap-2">
-                        <span className="flex items-center gap-1.5 text-[10px] px-2.5 py-1 rounded-full border"
+                    {/* Right: status badge + actions */}
+                    <div className="flex items-center gap-1.5 sm:gap-2 min-w-0">
+                        {/* Status badge — always visible */}
+                        <span className="flex items-center gap-1.5 text-[10px] px-2 py-1 rounded-full border shrink-0"
                             style={{
                                 background: ad?.status ? alpha(0.06) : 'rgba(255,255,255,0.03)',
                                 borderColor: ad?.status ? alpha(0.25) : 'rgba(255,255,255,0.06)',
@@ -416,94 +427,155 @@ const CampaignPage = () => {
                             {ad?.status ? 'Active' : 'Paused'}
                         </span>
 
+                        {/* Editing mode buttons */}
                         {editing ? (
                             <>
                                 <button
                                     onClick={() => setEditing(false)}
-                                    className="flex cursor-pointer items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs text-gray-500 hover:text-gray-200 border border-white/[0.06] hover:border-white/[0.12] transition-all duration-150"
+                                    className="flex cursor-pointer items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs text-gray-500 hover:text-gray-200 border border-white/[0.06] hover:border-white/[0.12] transition-all duration-150"
                                 >
-                                    <X className="w-3 h-3" /> Cancel
+                                    <X className="w-3 h-3" />
+                                    <span className="hidden sm:inline">Cancel</span>
                                 </button>
                                 <button
                                     onClick={handleSave}
                                     disabled={saving}
-                                    className="flex items-center cursor-pointer gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all duration-150 disabled:opacity-40"
+                                    className="flex items-center cursor-pointer gap-1 px-2.5 py-1.5 rounded-lg text-xs font-semibold transition-all duration-150 disabled:opacity-40"
                                     style={{ background: accent, color: '#000' }}
                                 >
                                     <Save className="w-3 h-3" />
-                                    {saving ? 'Saving…' : 'Save changes'}
+                                    <span className="hidden sm:inline">{saving ? 'Saving…' : 'Save'}</span>
+                                    <span className="sm:hidden">{saving ? '…' : 'Save'}</span>
                                 </button>
                             </>
                         ) : (
                             <>
+                                {/* Edit — always visible */}
                                 <button
                                     onClick={() => setEditing(true)}
-                                    className="flex items-center gap-1.5 px-3 py-1.5 cursor-pointer rounded-lg text-xs text-gray-500 hover:text-gray-200 border border-white/[0.06] hover:border-white/[0.12] transition-all duration-150"
+                                    className="flex items-center gap-1 px-2.5 py-1.5 cursor-pointer rounded-lg text-xs text-gray-500 hover:text-gray-200 border border-white/[0.06] hover:border-white/[0.12] transition-all duration-150"
                                 >
-                                    <Pencil className="w-3 h-3" /> Edit
-                                </button>
-                                <button
-                                    onClick={openAddFundsModal}
-                                    className="flex items-center cursor-pointer gap-1.5 px-3 py-1.5 rounded-lg text-xs transition-all duration-150 text-red-500/70 hover:text-red-400 border border-red-500/10 hover:border-red-500/25 hover:bg-red-500/5 cursor-pointer"
-                                    style={{ background: alpha(0.07), border: `1px solid ${alpha(0.18)}`, color: accent }}
-                                    onMouseEnter={e => { e.currentTarget.style.background = alpha(0.13); }}
-                                    onMouseLeave={e => { e.currentTarget.style.background = alpha(0.07); }}
-                                >
-                                    <Plus className="w-3.5 h-3.5" />
-                                    Add funds
+                                    <Pencil className="w-3 h-3" />
+                                    <span className="hidden sm:inline">Edit</span>
                                 </button>
 
-                                <button
-                                    onClick={() => setShowWithdrawModal(true)}
-                                    className="flex items-center cursor-pointer gap-1.5 px-3 py-1.5 rounded-lg text-xs transition-all duration-150 text-red-500/70 hover:text-red-400 border border-red-500/10 hover:border-red-500/25 hover:bg-red-500/5 cursor-pointer"
-                                    style={{ background: alpha(0.07), border: `1px solid ${alpha(0.18)}`, color: accent }}
-                                    onMouseEnter={e => { e.currentTarget.style.background = alpha(0.13); }}
-                                    onMouseLeave={e => { e.currentTarget.style.background = alpha(0.07); }}
-                                >
-                                    <ArrowDownToLine className="w-3.5 h-3.5" />
-                                    Withdraw funds
-                                </button>
-                                <button
-                                    onClick={handleDeleteClick}
-                                    className="flex items-center cursor-pointer gap-1.5 px-3 py-1.5 rounded-lg text-xs transition-all duration-150 text-red-500/70 hover:text-red-400 border border-red-500/10 hover:border-red-500/25 hover:bg-red-500/5 cursor-pointer"
-                                >
-                                    <Trash2 className="w-3 h-3" /> Delete
-                                </button>
+                                {/* Desktop: full action buttons */}
+                                <div className="hidden sm:flex items-center gap-2">
+                                    <button
+                                        onClick={openAddFundsModal}
+                                        className="flex items-center cursor-pointer gap-1.5 px-3 py-1.5 rounded-lg text-xs transition-all duration-150"
+                                        style={{ background: alpha(0.07), border: `1px solid ${alpha(0.18)}`, color: accent }}
+                                        onMouseEnter={e => { e.currentTarget.style.background = alpha(0.13); }}
+                                        onMouseLeave={e => { e.currentTarget.style.background = alpha(0.07); }}
+                                    >
+                                        <Plus className="w-3.5 h-3.5" />
+                                        Add funds
+                                    </button>
+                                    <button
+                                        onClick={() => setShowWithdrawModal(true)}
+                                        className="flex items-center cursor-pointer gap-1.5 px-3 py-1.5 rounded-lg text-xs transition-all duration-150"
+                                        style={{ background: alpha(0.07), border: `1px solid ${alpha(0.18)}`, color: accent }}
+                                        onMouseEnter={e => { e.currentTarget.style.background = alpha(0.13); }}
+                                        onMouseLeave={e => { e.currentTarget.style.background = alpha(0.07); }}
+                                    >
+                                        <ArrowDownToLine className="w-3.5 h-3.5" />
+                                        Withdraw
+                                    </button>
+                                    <button
+                                        onClick={handleDeleteClick}
+                                        className="flex items-center cursor-pointer gap-1.5 px-3 py-1.5 rounded-lg text-xs transition-all duration-150 text-red-500/70 hover:text-red-400 border border-red-500/10 hover:border-red-500/25 hover:bg-red-500/5"
+                                    >
+                                        <Trash2 className="w-3 h-3" /> Delete
+                                    </button>
+                                </div>
+
+                                {/* Mobile: kebab menu */}
+                                <div className="relative sm:hidden">
+                                    <button
+                                        onClick={() => setShowMobileMenu(prev => !prev)}
+                                        className="flex items-center justify-center w-8 h-8 rounded-lg text-gray-500 hover:text-gray-200 border border-white/[0.06] hover:border-white/[0.12] transition-all duration-150"
+                                    >
+                                        <MoreVertical className="w-3.5 h-3.5" />
+                                    </button>
+                                    {showMobileMenu && (
+                                        <>
+                                            {/* Backdrop */}
+                                            <div
+                                                className="fixed inset-0 z-40"
+                                                onClick={() => setShowMobileMenu(false)}
+                                            />
+                                            {/* Dropdown */}
+                                            <div
+                                                className="absolute right-0 top-10 z-50 w-44 rounded-xl overflow-hidden py-1"
+                                                style={{ background: '#141414', border: '1px solid rgba(255,255,255,0.08)', boxShadow: '0 8px 32px rgba(0,0,0,0.6)', animation: 'fadeUp 0.15s ease' }}
+                                            >
+                                                <button
+                                                    onClick={openAddFundsModal}
+                                                    className="w-full flex items-center gap-2.5 px-4 py-2.5 text-xs transition-colors duration-150 hover:bg-white/[0.04]"
+                                                    style={{ color: accent }}
+                                                >
+                                                    <Plus className="w-3.5 h-3.5 shrink-0" />
+                                                    Add funds
+                                                </button>
+                                                <button
+                                                    onClick={() => { setShowWithdrawModal(true); setShowMobileMenu(false); }}
+                                                    className="w-full flex items-center gap-2.5 px-4 py-2.5 text-xs transition-colors duration-150 hover:bg-white/[0.04]"
+                                                    style={{ color: accent }}
+                                                >
+                                                    <ArrowDownToLine className="w-3.5 h-3.5 shrink-0" />
+                                                    Withdraw funds
+                                                </button>
+                                                <div className="my-1 border-t border-white/[0.06]" />
+                                                <button
+                                                    onClick={handleDeleteClick}
+                                                    className="w-full flex items-center gap-2.5 px-4 py-2.5 text-xs text-red-500/70 hover:text-red-400 transition-colors duration-150 hover:bg-red-500/[0.04]"
+                                                >
+                                                    <Trash2 className="w-3.5 h-3.5 shrink-0" />
+                                                    Delete campaign
+                                                </button>
+                                            </div>
+                                        </>
+                                    )}
+                                </div>
                             </>
                         )}
                     </div>
                 </div>
             </div>
 
-            <div className="max-w-5xl mx-auto px-8 py-10">
+            {/* ── MAIN CONTENT ── */}
+            <div className="max-w-5xl mx-auto px-4 sm:px-8 py-8 sm:py-10">
 
-                <div className="fade-up mb-10">
-                    <p className="text-[10px] text-gray-700 uppercase tracking-[0.2em] mb-3">Campaign</p>
-                    <h1 className="text-3xl font-bold text-white tracking-tight mb-1">
+                {/* Header */}
+                <div className="fade-up mb-8 sm:mb-10">
+                    <p className="text-[10px] text-gray-700 uppercase tracking-[0.2em] mb-2 sm:mb-3">Campaign</p>
+                    <h1 className="text-2xl sm:text-3xl font-bold text-white tracking-tight mb-1 break-words">
                         {ad?.business_name ?? 'Unnamed Campaign'}
                     </h1>
-                    <p className="text-xs text-gray-700 truncate max-w-md">{id}</p>
+                    <p className="text-xs text-gray-700 truncate max-w-xs sm:max-w-md">{id}</p>
                 </div>
 
-                <div className="fade-up-1 grid grid-cols-2 lg:grid-cols-3 gap-3 mb-8">
-                    {statCards.map((card, i) => (
+                {/* Stat cards grid */}
+                <div className="fade-up-1 grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 gap-2.5 sm:gap-3 mb-6 sm:mb-8">
+                    {statCards.map((card) => (
                         <div
                             key={card.label}
-                            className="stat-card group relative bg-[#0e0e0e] rounded-xl p-5 border border-white/[0.05] hover:border-white/[0.1] transition-all duration-300 overflow-hidden"
+                            className="stat-card group relative bg-[#0e0e0e] rounded-xl p-4 sm:p-5 border border-white/[0.05] hover:border-white/[0.1] transition-all duration-300 overflow-hidden"
                         >
                             <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none rounded-xl"
                                 style={{ background: `radial-gradient(ellipse at top left, ${alpha(0.04)}, transparent 70%)` }} />
-                            <div className="flex items-start justify-between mb-4">
-                                <p className="text-[10px] text-gray-600 uppercase tracking-[0.15em]">{card.label}</p>
-                                <card.icon className="stat-icon w-3.5 h-3.5 text-gray-700 opacity-60 transition-all duration-200" />
+                            <div className="flex items-start justify-between mb-3 sm:mb-4">
+                                <p className="text-[9px] sm:text-[10px] text-gray-600 uppercase tracking-[0.15em] leading-tight pr-1">{card.label}</p>
+                                <card.icon className="stat-icon w-3 h-3 sm:w-3.5 sm:h-3.5 text-gray-700 opacity-60 transition-all duration-200 shrink-0" />
                             </div>
-                            <p className="text-2xl font-bold tabular-nums" style={{ color: accent }}>{card.value}</p>
-                            <p className="text-[10px] text-gray-700 mt-1">{card.sub}</p>
+                            <p className="text-lg sm:text-2xl font-bold tabular-nums" style={{ color: accent }}>{card.value}</p>
+                            <p className="text-[9px] sm:text-[10px] text-gray-700 mt-1">{card.sub}</p>
                         </div>
                     ))}
                 </div>
 
-                <div className="fade-up-2 bg-[#0e0e0e] rounded-xl p-5 border border-white/[0.05] mb-4">
+                {/* Budget progress bar */}
+                <div className="fade-up-2 bg-[#0e0e0e] rounded-xl p-4 sm:p-5 border border-white/[0.05] mb-4">
                     <div className="flex items-center justify-between mb-3">
                         <span className="text-[10px] text-gray-600 uppercase tracking-[0.15em]">Budget consumption</span>
                         <span className="text-xs tabular-nums" style={{ color: budgetUsedNum > 85 ? '#ef4444' : accent }}>
@@ -519,16 +591,18 @@ const CampaignPage = () => {
                             }}
                         />
                     </div>
-                    <div className="flex text-[12px] justify-between mt-3">
-                        <span className="text-[12px] text-gray-700">
-                            Spent ·<span className="text-gray-500">
+                    <div className="flex text-[11px] justify-between mt-3 gap-2">
+                        <span className="text-gray-700">
+                            Spent ·{' '}
+                            <span className="text-gray-500">
                                 {ad?.cost_per_click && analytics
                                     ? (analytics.totalClicks * parseFloat(ad.cost_per_click)).toFixed(4)
                                     : '—'} SOL
                             </span>
                         </span>
-                        <span className="text-[12px] text-gray-700">
-                            Total · <span className="text-gray-500">
+                        <span className="text-gray-700 text-right">
+                            Total ·{' '}
+                            <span className="text-gray-500">
                                 {ad?.cost_per_click && analytics && vaultBalance !== null
                                     ? ((analytics.totalClicks * parseFloat(ad.cost_per_click)) + vaultBalance).toFixed(4)
                                     : '—'} SOL
@@ -537,17 +611,19 @@ const CampaignPage = () => {
                     </div>
                 </div>
 
+                {/* Details + Sidebar */}
                 <div className="fade-up-3 grid grid-cols-1 lg:grid-cols-3 gap-4">
 
+                    {/* Campaign details card */}
                     <div className="lg:col-span-2 bg-[#0e0e0e] rounded-xl border border-white/[0.05] overflow-hidden">
-                        <div className="px-6 py-4 border-b border-white/[0.04] flex items-center justify-between">
+                        <div className="px-4 sm:px-6 py-4 border-b border-white/[0.04] flex items-center justify-between">
                             <h2 className="text-[10px] text-gray-600 uppercase tracking-[0.15em]">Campaign details</h2>
                             {editing && (
                                 <span className="text-[10px] text-gray-700">editing mode</span>
                             )}
                         </div>
 
-                        <div className="p-6 space-y-6">
+                        <div className="p-4 sm:p-6 space-y-5 sm:space-y-6">
                             {textFields.map(field => (
                                 <div key={field.label}>
                                     <p className="text-[10px] text-gray-600 uppercase tracking-[0.15em] mb-2">{field.label}</p>
@@ -561,7 +637,7 @@ const CampaignPage = () => {
                                             onBlur={e => e.currentTarget.style.borderColor = 'rgba(255,255,255,0.06)'}
                                         />
                                     ) : (
-                                        <p className="text-sm text-gray-300">
+                                        <p className="text-sm text-gray-300 break-words">
                                             {field.value || <span className="text-gray-700">—</span>}
                                         </p>
                                     )}
@@ -580,7 +656,7 @@ const CampaignPage = () => {
                                         onBlur={e => e.currentTarget.style.borderColor = 'rgba(255,255,255,0.06)'}
                                     />
                                 ) : (
-                                    <p className="text-sm text-gray-400">
+                                    <p className="text-sm text-gray-400 break-words">
                                         {keywords || <span className="text-gray-700">—</span>}
                                     </p>
                                 )}
@@ -615,7 +691,8 @@ const CampaignPage = () => {
                                                 ))}
                                             </div>
                                         )}
-                                        <div className="grid grid-cols-3 sm:grid-cols-5 gap-1.5">
+                                        {/* Tag grid: 3 cols on mobile, 5 on sm+ */}
+                                        <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-5 gap-1.5">
                                             {niches.map((niche) => {
                                                 const tagText = `${niche.emoji} ${niche.label}`;
                                                 const isSelected = selectedTags.includes(tagText);
@@ -629,7 +706,7 @@ const CampaignPage = () => {
                                                             else if (selectedTags.length < 15) setSelectedTags(prev => [...prev, tagText]);
                                                         }}
                                                         disabled={isDisabled}
-                                                        className="relative flex flex-col items-center justify-center gap-1.5 p-3 rounded-lg border transition-all duration-150 aspect-square"
+                                                        className="relative flex flex-col items-center justify-center gap-1 p-2.5 sm:p-3 rounded-lg border transition-all duration-150 aspect-square"
                                                         style={{
                                                             background: isSelected ? alpha(0.06) : '#0a0a0a',
                                                             borderColor: isSelected ? alpha(0.35) : 'rgba(255,255,255,0.05)',
@@ -640,14 +717,14 @@ const CampaignPage = () => {
                                                         onMouseLeave={e => { if (!isSelected && !isDisabled) (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.05)'; }}
                                                     >
                                                         {isSelected && (
-                                                            <div className="absolute top-1.5 right-1.5 w-3 h-3 rounded-full flex items-center justify-center" style={{ background: accent }}>
+                                                            <div className="absolute top-1 right-1 w-3 h-3 rounded-full flex items-center justify-center" style={{ background: accent }}>
                                                                 <svg className="w-2 h-2 text-black" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7" />
                                                                 </svg>
                                                             </div>
                                                         )}
-                                                        <span className="text-lg">{niche.emoji}</span>
-                                                        <span className={`text-[9px] text-center leading-tight ${isSelected ? 'text-gray-300' : 'text-gray-600'}`}>
+                                                        <span className="text-base sm:text-lg">{niche.emoji}</span>
+                                                        <span className={`text-[8px] sm:text-[9px] text-center leading-tight ${isSelected ? 'text-gray-300' : 'text-gray-600'}`}>
                                                             {niche.label}
                                                         </span>
                                                     </button>
@@ -671,37 +748,64 @@ const CampaignPage = () => {
                         </div>
                     </div>
 
+                    {/* Sidebar */}
                     <div className="space-y-4">
 
+                        {/* Financials card */}
                         <div className="bg-[#0e0e0e] rounded-xl border border-white/[0.05] overflow-hidden">
                             <div className="px-5 py-4 border-b border-white/[0.04]">
                                 <h3 className="text-[10px] text-gray-600 uppercase tracking-[0.15em]">Financials</h3>
                             </div>
-                            <div className="p-5 space-y-4">
+                            <div className="p-4 sm:p-5 space-y-4">
                                 {[
                                     { label: 'Total Budget', value: `${ad?.Cost ?? '—'} SOL` },
                                     { label: 'Cost per Click', value: `${ad?.cost_per_click ?? '—'} SOL` },
                                     { label: 'Max Clicks', value: String(ad?.Clicks ?? '—') },
                                 ].map(f => (
-                                    <div key={f.label} className="flex items-center justify-between">
+                                    <div key={f.label} className="flex items-center justify-between gap-2">
                                         <span className="text-[10px] text-gray-600 uppercase tracking-[0.1em]">{f.label}</span>
-                                        <span className="text-xs text-gray-300 tabular-nums">{f.value}</span>
+                                        <span className="text-xs text-gray-300 tabular-nums text-right">{f.value}</span>
                                     </div>
                                 ))}
 
                                 <div className="border-t border-white/[0.04] pt-4">
-                                    <div className="flex items-center justify-between mb-1">
+                                    <div className="flex items-center justify-between mb-1 gap-2">
                                         <span className="text-[10px] text-gray-600 uppercase tracking-[0.1em]">Vault Balance</span>
-                                        <span className="text-xs tabular-nums font-semibold" style={{ color: accent }}>
+                                        <span className="text-xs tabular-nums font-semibold text-right" style={{ color: accent }}>
                                             {vaultBalance !== null ? `${vaultBalance.toFixed(6)} SOL` : '—'}
                                         </span>
                                     </div>
                                     <p className="text-[10px] text-gray-700">Available for withdrawal</p>
                                 </div>
 
+                                {/* Mobile: Add funds + withdraw side by side */}
+                                <div className="flex gap-2 sm:hidden">
+                                    <button
+                                        onClick={openAddFundsModal}
+                                        className="flex-1 flex cursor-pointer items-center justify-center gap-1.5 py-2.5 rounded-lg text-xs font-medium transition-all duration-150"
+                                        style={{ background: alpha(0.07), border: `1px solid ${alpha(0.18)}`, color: accent }}
+                                        onMouseEnter={e => { e.currentTarget.style.background = alpha(0.13); }}
+                                        onMouseLeave={e => { e.currentTarget.style.background = alpha(0.07); }}
+                                    >
+                                        <Plus className="w-3.5 h-3.5" />
+                                        Add
+                                    </button>
+                                    <button
+                                        onClick={() => setShowWithdrawModal(true)}
+                                        className="flex-1 flex cursor-pointer items-center justify-center gap-1.5 py-2.5 rounded-lg text-xs font-medium transition-all duration-150"
+                                        style={{ background: alpha(0.07), border: `1px solid ${alpha(0.18)}`, color: accent }}
+                                        onMouseEnter={e => { e.currentTarget.style.background = alpha(0.13); }}
+                                        onMouseLeave={e => { e.currentTarget.style.background = alpha(0.07); }}
+                                    >
+                                        <ArrowDownToLine className="w-3.5 h-3.5" />
+                                        Withdraw
+                                    </button>
+                                </div>
+
+                                {/* Desktop: single withdraw button */}
                                 <button
                                     onClick={() => setShowWithdrawModal(true)}
-                                    className="w-full flex cursor-pointer items-center justify-center gap-2 py-2.5 rounded-lg text-xs font-medium transition-all duration-150"
+                                    className="hidden sm:flex w-full cursor-pointer items-center justify-center gap-2 py-2.5 rounded-lg text-xs font-medium transition-all duration-150"
                                     style={{ background: alpha(0.07), border: `1px solid ${alpha(0.18)}`, color: accent }}
                                     onMouseEnter={e => { e.currentTarget.style.background = alpha(0.13); }}
                                     onMouseLeave={e => { e.currentTarget.style.background = alpha(0.07); }}
@@ -712,11 +816,12 @@ const CampaignPage = () => {
                             </div>
                         </div>
 
+                        {/* Meta card */}
                         <div className="bg-[#0e0e0e] rounded-xl border border-white/[0.05] overflow-hidden">
                             <div className="px-5 py-4 border-b border-white/[0.04]">
                                 <h3 className="text-[10px] text-gray-600 uppercase tracking-[0.15em]">Meta</h3>
                             </div>
-                            <div className="p-5 space-y-3">
+                            <div className="p-4 sm:p-5 space-y-3">
                                 <div>
                                     <p className="text-[10px] text-gray-600 uppercase tracking-[0.1em] mb-1">Campaign ID</p>
                                     <p className="text-[11px] text-gray-600 break-all leading-relaxed">{id}</p>
@@ -744,19 +849,22 @@ const CampaignPage = () => {
                 </div>
             </div>
 
+            {/* ── ADD FUNDS MODAL ── */}
             {showAddFundsModal && (
                 <div
-                    className="fixed inset-0 z-50 flex items-center justify-center p-4"
+                    className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4"
                     style={{ background: 'rgba(0,0,0,0.8)', backdropFilter: 'blur(8px)', animation: 'fadeIn 0.2s ease' }}
                     onClick={e => { if (e.target === e.currentTarget) closeAddFundsModal(); }}
                 >
                     <div
-                        className="w-full max-w-sm rounded-2xl overflow-hidden"
+                        className="w-full sm:max-w-sm rounded-t-2xl sm:rounded-2xl overflow-hidden max-h-[90vh] overflow-y-auto"
                         style={{ background: '#0e0e0e', border: '1px solid rgba(255,255,255,0.07)', animation: 'fadeUp 0.25s ease' }}
                     >
-                        <div className="px-6 pt-6 pb-5 border-b border-white/[0.04] flex items-center justify-between">
+                        <div className="px-5 sm:px-6 pt-5 sm:pt-6 pb-4 sm:pb-5 border-b border-white/[0.04] flex items-center justify-between">
+                            {/* Drag handle on mobile */}
+                            <div className="absolute top-2 left-1/2 -translate-x-1/2 w-8 h-1 rounded-full bg-white/[0.1] sm:hidden" />
                             <div className="flex items-center gap-3">
-                                <div className="w-8 h-8 rounded-lg flex items-center justify-center"
+                                <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0"
                                     style={{ background: alpha(0.08), border: `1px solid ${alpha(0.18)}` }}>
                                     <Plus className="w-3.5 h-3.5" style={{ color: accent }} />
                                 </div>
@@ -771,7 +879,7 @@ const CampaignPage = () => {
                         </div>
 
                         {addFundsSuccess ? (
-                            <div className="p-6 flex flex-col items-center text-center gap-5">
+                            <div className="p-5 sm:p-6 flex flex-col items-center text-center gap-5">
                                 <div className="w-12 h-12 rounded-xl flex items-center justify-center"
                                     style={{ background: alpha(0.08), border: `1px solid ${alpha(0.2)}` }}>
                                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={accent} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -807,7 +915,7 @@ const CampaignPage = () => {
                                 </button>
                             </div>
                         ) : (
-                            <div className="p-6 space-y-5">
+                            <div className="p-5 sm:p-6 space-y-4 sm:space-y-5">
                                 <div className="rounded-xl p-4" style={{ background: '#0a0a0a', border: '1px solid rgba(255,255,255,0.05)' }}>
                                     <div className="flex items-center justify-between">
                                         <div>
@@ -828,24 +936,24 @@ const CampaignPage = () => {
                                     <div className="flex items-center gap-2">
                                         <button
                                             onClick={() => setAddClicksInput(String(Math.max(1, addClicksNum - (addClicksNum >= 1000 ? 100 : addClicksNum >= 100 ? 10 : 1))))}
-                                            className="w-9 h-9 flex items-center justify-center rounded-lg border border-white/[0.06] text-gray-500 hover:text-gray-200 hover:border-white/[0.12] transition-all duration-150 shrink-0"
+                                            className="w-10 h-10 sm:w-9 sm:h-9 flex items-center justify-center rounded-lg border border-white/[0.06] text-gray-500 hover:text-gray-200 hover:border-white/[0.12] transition-all duration-150 shrink-0 touch-manipulation"
                                         >
-                                            <Minus className="w-3 h-3" />
+                                            <Minus className="w-3.5 h-3.5" />
                                         </button>
                                         <input
                                             type="number"
                                             value={addClicksInput}
                                             onChange={e => setAddClicksInput(e.target.value)}
                                             min={1}
-                                            className="clicks-input flex-1 bg-[#0a0a0a] border border-white/[0.06] rounded-lg px-3 py-2.5 text-sm text-gray-200 text-center tabular-nums transition-colors duration-150"
+                                            className="flex-1 bg-[#0a0a0a] border border-white/[0.06] rounded-lg px-3 py-2.5 text-sm text-gray-200 text-center tabular-nums transition-colors duration-150"
                                             onFocus={e => e.currentTarget.style.borderColor = alpha(0.4)}
                                             onBlur={e => e.currentTarget.style.borderColor = 'rgba(255,255,255,0.06)'}
                                         />
                                         <button
                                             onClick={() => setAddClicksInput(String(addClicksNum + (addClicksNum >= 1000 ? 100 : addClicksNum >= 100 ? 10 : 1)))}
-                                            className="w-9 h-9 flex items-center justify-center rounded-lg border border-white/[0.06] text-gray-500 hover:text-gray-200 hover:border-white/[0.12] transition-all duration-150 shrink-0"
+                                            className="w-10 h-10 sm:w-9 sm:h-9 flex items-center justify-center rounded-lg border border-white/[0.06] text-gray-500 hover:text-gray-200 hover:border-white/[0.12] transition-all duration-150 shrink-0 touch-manipulation"
                                         >
-                                            <Plus className="w-3 h-3" />
+                                            <Plus className="w-3.5 h-3.5" />
                                         </button>
                                     </div>
                                     <div className="flex gap-1.5 mt-2">
@@ -853,7 +961,7 @@ const CampaignPage = () => {
                                             <button
                                                 key={preset}
                                                 onClick={() => setAddClicksInput(String(preset))}
-                                                className="flex-1 py-1.5 rounded-md text-[10px] transition-all duration-150 border"
+                                                className="flex-1 py-2 rounded-md text-[10px] transition-all duration-150 border touch-manipulation"
                                                 style={{
                                                     background: addClicksNum === preset ? alpha(0.08) : 'transparent',
                                                     borderColor: addClicksNum === preset ? alpha(0.3) : 'rgba(255,255,255,0.05)',
@@ -871,9 +979,9 @@ const CampaignPage = () => {
                                         <p className="text-[10px] text-gray-600 uppercase tracking-[0.15em]">Breakdown</p>
                                     </div>
                                     <div className="px-4 py-3 space-y-2.5 bg-[#0a0a0a]">
-                                        <div className="flex justify-between text-[11px]">
-                                            <span className="text-gray-600">{addClicksNum.toLocaleString()} clicks × {cpcSOL} SOL</span>
-                                            <span className="text-gray-400 tabular-nums">{addFundsTotalSOL.toFixed(6)} SOL</span>
+                                        <div className="flex justify-between text-[11px] gap-2">
+                                            <span className="text-gray-600 min-w-0 truncate">{addClicksNum.toLocaleString()} clicks × {cpcSOL} SOL</span>
+                                            <span className="text-gray-400 tabular-nums shrink-0">{addFundsTotalSOL.toFixed(6)} SOL</span>
                                         </div>
                                         <div className="flex justify-between text-[11px]">
                                             <span className="text-gray-600">Platform fee (1%)</span>
@@ -905,14 +1013,14 @@ const CampaignPage = () => {
                                 <div className="flex gap-2">
                                     <button
                                         onClick={closeAddFundsModal}
-                                        className="flex-1 py-2.5 rounded-lg text-xs text-gray-500 hover:text-gray-300 border border-white/[0.06] hover:border-white/[0.1] transition-all duration-150"
+                                        className="flex-1 py-3 sm:py-2.5 rounded-lg text-xs text-gray-500 hover:text-gray-300 border border-white/[0.06] hover:border-white/[0.1] transition-all duration-150 touch-manipulation"
                                     >
                                         Cancel
                                     </button>
                                     <button
                                         disabled={depositing || addClicksNum <= 0 || addFundsTotalSOL <= 0}
                                         onClick={handleAddFunds}
-                                        className="flex-1 py-2.5 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 transition-all duration-150 disabled:opacity-30 disabled:cursor-not-allowed"
+                                        className="flex-1 py-3 sm:py-2.5 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 transition-all duration-150 disabled:opacity-30 disabled:cursor-not-allowed touch-manipulation"
                                         style={{ background: alpha(0.1), border: `1px solid ${alpha(0.3)}`, color: accent }}
                                         onMouseEnter={e => { if (!depositing && addClicksNum > 0) e.currentTarget.style.background = alpha(0.18); }}
                                         onMouseLeave={e => { e.currentTarget.style.background = alpha(0.1); }}
@@ -929,19 +1037,21 @@ const CampaignPage = () => {
                 </div>
             )}
 
+            {/* ── WITHDRAW MODAL ── */}
             {showWithdrawModal && (
                 <div
-                    className="fixed inset-0 z-50 flex items-center justify-center p-4"
+                    className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4"
                     style={{ background: 'rgba(0,0,0,0.8)', backdropFilter: 'blur(8px)', animation: 'fadeIn 0.2s ease' }}
                     onClick={e => { if (e.target === e.currentTarget) setShowWithdrawModal(false); }}
                 >
                     <div
-                        className="w-full max-w-sm rounded-2xl overflow-hidden"
+                        className="w-full sm:max-w-sm rounded-t-2xl sm:rounded-2xl overflow-hidden"
                         style={{ background: '#0e0e0e', border: '1px solid rgba(255,255,255,0.07)', animation: 'fadeUp 0.25s ease' }}
                     >
-                        <div className="px-6 pt-6 pb-5 border-b border-white/[0.04] flex items-center justify-between">
+                        <div className="relative px-5 sm:px-6 pt-5 sm:pt-6 pb-4 sm:pb-5 border-b border-white/[0.04] flex items-center justify-between">
+                            <div className="absolute top-2 left-1/2 -translate-x-1/2 w-8 h-1 rounded-full bg-white/[0.1] sm:hidden" />
                             <div className="flex items-center gap-3">
-                                <div className="w-8 h-8 rounded-lg flex items-center justify-center"
+                                <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0"
                                     style={{ background: alpha(0.08), border: `1px solid ${alpha(0.18)}` }}>
                                     <ArrowDownToLine className="w-3.5 h-3.5" style={{ color: accent }} />
                                 </div>
@@ -955,7 +1065,7 @@ const CampaignPage = () => {
                             </button>
                         </div>
 
-                        <div className="p-6 space-y-4">
+                        <div className="p-5 sm:p-6 space-y-4">
                             <div className="rounded-xl p-4" style={{ background: alpha(0.04), border: `1px solid ${alpha(0.1)}` }}>
                                 <p className="text-[10px] text-gray-600 uppercase tracking-[0.15em] mb-1.5">Available Balance</p>
                                 <p className="text-2xl font-bold tabular-nums" style={{ color: accent }}>
@@ -978,7 +1088,7 @@ const CampaignPage = () => {
                                     value={withdrawAddress}
                                     onChange={e => setWithdrawAddress(e.target.value)}
                                     placeholder="Solana wallet address"
-                                    className="w-full bg-[#0a0a0a] border border-white/[0.06] rounded-lg px-3 py-2.5 text-sm text-gray-200 placeholder-gray-700 transition-colors duration-150"
+                                    className="w-full bg-[#0a0a0a] border border-white/[0.06] rounded-lg px-3 py-3 sm:py-2.5 text-sm text-gray-200 placeholder-gray-700 transition-colors duration-150"
                                     onFocus={e => e.currentTarget.style.borderColor = alpha(0.35)}
                                     onBlur={e => e.currentTarget.style.borderColor = 'rgba(255,255,255,0.06)'}
                                 />
@@ -987,14 +1097,14 @@ const CampaignPage = () => {
                             <div className="flex gap-2 pt-1">
                                 <button
                                     onClick={() => { setShowWithdrawModal(false); setWithdrawAddress(''); }}
-                                    className="flex-1 cursor-pointer py-2.5 rounded-lg text-xs text-gray-500 hover:text-gray-300 border border-white/[0.06] hover:border-white/[0.1] transition-all duration-150"
+                                    className="flex-1 cursor-pointer py-3 sm:py-2.5 rounded-lg text-xs text-gray-500 hover:text-gray-300 border border-white/[0.06] hover:border-white/[0.1] transition-all duration-150 touch-manipulation"
                                 >
                                     Cancel
                                 </button>
                                 <button
                                     disabled={withdrawing || !withdrawAddress.trim()}
                                     onClick={Withdraw}
-                                    className="flex-1 cursor-pointer py-2.5 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 transition-all duration-150 disabled:opacity-30 disabled:cursor-not-allowed"
+                                    className="flex-1 cursor-pointer py-3 sm:py-2.5 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 transition-all duration-150 disabled:opacity-30 disabled:cursor-not-allowed touch-manipulation"
                                     style={{ background: alpha(0.1), border: `1px solid ${alpha(0.3)}`, color: accent }}
                                     onMouseEnter={e => { if (!withdrawing && withdrawAddress.trim()) e.currentTarget.style.background = alpha(0.18); }}
                                     onMouseLeave={e => { e.currentTarget.style.background = alpha(0.1); }}
@@ -1008,49 +1118,46 @@ const CampaignPage = () => {
                 </div>
             )}
 
+            {/* ── WITHDRAWAL SUCCESS MODAL ── */}
             {showSuccessModal && (
                 <div
-                    className="fixed inset-0 z-50 flex items-center justify-center p-4"
+                    className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4"
                     style={{ background: 'rgba(0,0,0,0.8)', backdropFilter: 'blur(8px)', animation: 'fadeIn 0.2s ease' }}
                     onClick={e => { if (e.target === e.currentTarget) setShowSuccessModal(false); }}
                 >
                     <div
-                        className="w-full max-w-sm rounded-2xl overflow-hidden"
+                        className="w-full sm:max-w-sm rounded-t-2xl sm:rounded-2xl overflow-hidden"
                         style={{ background: '#0e0e0e', border: '1px solid rgba(255,255,255,0.07)', animation: 'fadeUp 0.25s ease' }}
                     >
-                        <div className="p-8 flex flex-col items-center text-center gap-5">
+                        <div className="relative p-6 sm:p-8 flex flex-col items-center text-center gap-5">
+                            <div className="absolute top-2 left-1/2 -translate-x-1/2 w-8 h-1 rounded-full bg-white/[0.1] sm:hidden" />
                             <div className="w-12 h-12 rounded-xl flex items-center justify-center"
                                 style={{ background: alpha(0.08), border: `1px solid ${alpha(0.2)}` }}>
                                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={accent} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                                     <polyline points="20 6 9 17 4 12" />
                                 </svg>
                             </div>
-
                             <div>
                                 <h3 className="text-white font-semibold text-base mb-1">Withdrawal Successful</h3>
                                 <p className="text-gray-600 text-xs leading-relaxed">Funds sent to the recipient wallet.</p>
                             </div>
-
                             <div className="w-full rounded-xl p-4" style={{ background: alpha(0.05), border: `1px solid ${alpha(0.12)}` }}>
                                 <p className="text-[10px] text-gray-600 uppercase tracking-[0.15em] mb-1.5">Amount Withdrawn</p>
                                 <p className="text-2xl font-bold tabular-nums" style={{ color: accent }}>{withdrawnAmount} SOL</p>
                             </div>
-
                             <div className="w-full rounded-xl p-3.5" style={{ background: '#0a0a0a', border: '1px solid rgba(255,255,255,0.05)' }}>
                                 <p className="text-[10px] text-gray-600 uppercase tracking-[0.12em] mb-1">Recipient</p>
-                                <p className="text-xs text-gray-400 font-mono">{withdrawAddress.slice(0, 8)}...{withdrawAddress.slice(-8)}</p>
+                                <p className="text-xs text-gray-400 font-mono break-all">{withdrawAddress.slice(0, 8)}...{withdrawAddress.slice(-8)}</p>
                             </div>
-
-                            <div className="flex gap-2 w-full rounded-xl p-3.5" style={{ background: 'rgba(239,68,68,0.05)', border: '1px solid rgba(239,68,68,0.15)' }}>
+                            <div className="w-full flex gap-2.5 rounded-xl p-3.5" style={{ background: 'rgba(239,68,68,0.05)', border: '1px solid rgba(239,68,68,0.15)' }}>
                                 <AlertTriangle className="w-3.5 h-3.5 text-red-500/70 mt-0.5 shrink-0" />
-                                <p className="text-[11px] text-red-400/70 leading-relaxed">
+                                <p className="text-[11px] text-red-400/70 leading-relaxed text-left">
                                     Campaign <span className="text-red-400 font-medium">paused</span>. Top up vault to reactivate.
                                 </p>
                             </div>
-
                             <button
                                 onClick={() => setShowSuccessModal(false)}
-                                className="w-full py-2.5 rounded-lg text-xs font-medium transition-all duration-150"
+                                className="w-full py-3 sm:py-2.5 rounded-lg text-xs font-medium transition-all duration-150 touch-manipulation"
                                 style={{ background: alpha(0.08), border: `1px solid ${alpha(0.18)}`, color: accent }}
                                 onMouseEnter={e => { e.currentTarget.style.background = alpha(0.14); }}
                                 onMouseLeave={e => { e.currentTarget.style.background = alpha(0.08); }}
@@ -1061,20 +1168,22 @@ const CampaignPage = () => {
                     </div>
                 </div>
             )}
-            {/* Delete confirmation modal */}
+
+            {/* ── DELETE CONFIRMATION MODAL ── */}
             {showDeleteModal && (
                 <div
-                    className="fixed inset-0 z-50 flex items-center justify-center p-4"
+                    className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4"
                     style={{ background: 'rgba(0,0,0,0.8)', backdropFilter: 'blur(8px)', animation: 'fadeIn 0.2s ease' }}
                     onClick={e => { if (e.target === e.currentTarget) setShowDeleteModal(false); }}
                 >
                     <div
-                        className="w-full max-w-sm rounded-2xl overflow-hidden"
+                        className="w-full sm:max-w-sm rounded-t-2xl sm:rounded-2xl overflow-hidden"
                         style={{ background: '#0e0e0e', border: '1px solid rgba(239,68,68,0.15)', animation: 'fadeUp 0.25s ease' }}
                     >
-                        <div className="px-6 pt-6 pb-5 border-b border-white/[0.04] flex items-center justify-between">
+                        <div className="relative px-5 sm:px-6 pt-5 sm:pt-6 pb-4 sm:pb-5 border-b border-white/[0.04] flex items-center justify-between">
+                            <div className="absolute top-2 left-1/2 -translate-x-1/2 w-8 h-1 rounded-full bg-white/[0.1] sm:hidden" />
                             <div className="flex items-center gap-3">
-                                <div className="w-8 h-8 rounded-lg flex items-center justify-center"
+                                <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0"
                                     style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)' }}>
                                     <Trash2 className="w-3.5 h-3.5 text-red-500" />
                                 </div>
@@ -1088,7 +1197,7 @@ const CampaignPage = () => {
                             </button>
                         </div>
 
-                        <div className="p-6 space-y-4">
+                        <div className="p-5 sm:p-6 space-y-4">
                             <div className="flex gap-2.5 rounded-xl p-3.5"
                                 style={{ background: 'rgba(239,68,68,0.05)', border: '1px solid rgba(239,68,68,0.15)' }}>
                                 <AlertTriangle className="w-3.5 h-3.5 text-red-500/70 mt-0.5 shrink-0" />
@@ -1100,20 +1209,20 @@ const CampaignPage = () => {
 
                             <div className="rounded-xl p-4" style={{ background: '#0a0a0a', border: '1px solid rgba(255,255,255,0.05)' }}>
                                 <p className="text-[10px] text-gray-600 uppercase tracking-[0.15em] mb-1">Campaign ID</p>
-                                <p className="text-[11px] text-gray-600 break-all font-mono">{id}</p>
+                                <p className="text-[11px] text-gray-600 break-all font-mono leading-relaxed">{id}</p>
                             </div>
 
                             <div className="flex gap-2 pt-1">
                                 <button
                                     onClick={() => setShowDeleteModal(false)}
-                                    className="flex-1 py-2.5 rounded-lg text-xs text-gray-500 hover:text-gray-300 border border-white/[0.06] hover:border-white/[0.1] transition-all duration-150"
+                                    className="flex-1 py-3 sm:py-2.5 rounded-lg text-xs text-gray-500 hover:text-gray-300 border border-white/[0.06] hover:border-white/[0.1] transition-all duration-150 touch-manipulation"
                                 >
                                     Cancel
                                 </button>
                                 <button
                                     disabled={deleting}
                                     onClick={handleDelete}
-                                    className="flex-1 py-2.5 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 transition-all duration-150 disabled:opacity-40 disabled:cursor-not-allowed text-red-400 hover:text-red-300"
+                                    className="flex-1 py-3 sm:py-2.5 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 transition-all duration-150 disabled:opacity-40 disabled:cursor-not-allowed text-red-400 hover:text-red-300 touch-manipulation"
                                     style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.25)' }}
                                     onMouseEnter={e => { if (!deleting) e.currentTarget.style.background = 'rgba(239,68,68,0.14)'; }}
                                     onMouseLeave={e => { e.currentTarget.style.background = 'rgba(239,68,68,0.08)'; }}
@@ -1127,10 +1236,10 @@ const CampaignPage = () => {
                 </div>
             )}
 
-            {/* Toast */}
+            {/* ── TOAST ── */}
             {toast && (
                 <div
-                    className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 px-4 py-3 rounded-xl text-xs font-medium whitespace-nowrap"
+                    className="fixed bottom-6 left-4 right-4 sm:left-1/2 sm:right-auto sm:-translate-x-1/2 z-50 flex items-center gap-3 px-4 py-3 rounded-xl text-xs font-medium"
                     style={{
                         background: '#0e0e0e',
                         border: '1px solid rgba(239,68,68,0.3)',
@@ -1140,7 +1249,7 @@ const CampaignPage = () => {
                     }}
                 >
                     <AlertTriangle className="w-3.5 h-3.5 shrink-0" />
-                    {toast}
+                    <span className="flex-1 sm:whitespace-nowrap">{toast}</span>
                 </div>
             )}
         </div>

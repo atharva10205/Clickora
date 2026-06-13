@@ -56,7 +56,7 @@ const Wallet = () => {
   const [copied, setCopied] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [accent, setAccent] = useState('#ffffff');
-
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   // Derived color helpers — always in sync with accent state
   const alpha = (op: number) => `rgba(255,255,255,${op})`;
   const hR = parseInt(accent.slice(1, 3), 16);
@@ -99,8 +99,8 @@ const Wallet = () => {
   if (loading) {
     return (
       <div className="flex h-screen bg-[#0a0a0a] text-gray-200">
-        <Sidebar activeTab={activeTab} />
-        <main className="flex-1 p-8 overflow-y-auto flex flex-col gap-6">
+        <Sidebar activeTab={activeTab} isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+        <main className="flex-1 p-4 sm:p-8 overflow-y-auto flex flex-col gap-6">
           <div className="h-10 w-48 bg-[#161616] rounded-xl animate-pulse" />
           <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
             {[0, 1, 2].map(i => <div key={i} className="h-36 bg-[#111111] border border-gray-800/50 rounded-xl animate-pulse" />)}
@@ -114,8 +114,8 @@ const Wallet = () => {
   if (error) {
     return (
       <div className="flex h-screen bg-[#0a0a0a] text-gray-200">
-        <Sidebar activeTab={activeTab} />
-        <main className="flex-1 p-8 flex items-center justify-center">
+        <Sidebar activeTab={activeTab} isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+        <main className="flex-1 p-4 sm:p-8 flex items-center justify-center">
           <div className="text-center">
             <p className="text-red-400 text-sm mb-4">{error}</p>
             <button
@@ -132,45 +132,55 @@ const Wallet = () => {
 
   return (
     <div className="flex h-screen bg-[#0a0a0a] text-gray-300">
-      <Sidebar activeTab={activeTab} />
+      {sidebarOpen && (
+        <div
+          className="fixed inset-0 bg-black/60 z-20 lg:hidden"
+          onClick={() => setSidebarOpen(false)}
+        />
+      )}
 
-      <main className="flex-1 p-8 overflow-y-auto">
+      <Sidebar activeTab={activeTab} isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
 
-        <div className="flex items-center justify-between mb-10">
-          <div>
-            <h1 className="text-3xl font-bold mb-1 text-white tracking-tight">Wallet</h1>
-            <p className="text-gray-600 text-sm">Manage your funds and transactions</p>
+      <main className="flex-1 p-4 sm:p-8 overflow-y-auto">
+
+        <div className="flex items-center justify-between mb-8 sm:mb-10">
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => setSidebarOpen(true)}
+              className="lg:hidden flex flex-col gap-1 p-1.5 rounded-md hover:bg-[#161616] transition-colors"
+            >
+              <span className="w-4 h-px bg-gray-400" />
+              <span className="w-4 h-px bg-gray-400" />
+              <span className="w-4 h-px bg-gray-400" />
+            </button>
+            <div>
+              <h1 className="text-lg sm:text-3xl font-bold mb-0.5 text-white tracking-tight">Wallet</h1>
+              <p className="text-gray-600 text-xs sm:text-sm hidden sm:block">Manage your funds and transactions</p>
+            </div>
           </div>
-         
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-5 mb-8">
-
-          <div
-            className="bg-[#111111] p-6 rounded-xl transition-all duration-200"
-            style={{ border: `1px solid ${alpha(0.08)}` }}
-            onMouseEnter={e => {
-              (e.currentTarget as HTMLElement).style.borderColor = accent;
-              (e.currentTarget as HTMLElement).style.boxShadow = `0 0 28px ${hAlpha(0.1)}`;
-            }}
-            onMouseLeave={e => {
-              (e.currentTarget as HTMLElement).style.borderColor = alpha(0.08);
-              (e.currentTarget as HTMLElement).style.boxShadow = 'none';
-            }}
-          >
-            <div className="flex items-center gap-2 text-gray-600 text-xs uppercase tracking-widest mb-3">
-              <TrendingUp className="w-4 h-4" />
-              Total Spent
-            </div>
-            <p className="text-3xl font-bold font-mono tabular-nums" style={{ color: accent }}>
-              {(data?.totalSpent ?? 0).toFixed(4)}
-              <span className="text-lg text-gray-500 ml-1.5">SOL</span>
-            </p>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-5 mb-6 sm:mb-8 [&>*]:p-4 sm:[&>*]:p-6">          <div
+          className="bg-[#111111] p-4 sm:p-6 rounded-xl transition-all duration-200" style={{ border: `1px solid ${alpha(0.08)}` }}
+          onMouseEnter={e => {
+            (e.currentTarget as HTMLElement).style.borderColor = accent;
+            (e.currentTarget as HTMLElement).style.boxShadow = `0 0 28px ${hAlpha(0.1)}`;
+          }}
+          onMouseLeave={e => {
+            (e.currentTarget as HTMLElement).style.borderColor = alpha(0.08);
+            (e.currentTarget as HTMLElement).style.boxShadow = 'none';
+          }}
+        >
+          <div className="flex items-center gap-2 text-gray-600 text-xs uppercase tracking-widest mb-2 sm:mb-3">              <TrendingUp className="w-4 h-4" />
+            Total Spent
           </div>
+          <p className="text-xl sm:text-3xl font-bold font-mono tabular-nums" style={{ color: accent }}>              {(data?.totalSpent ?? 0).toFixed(4)}
+            <span className="text-lg text-gray-500 ml-1.5">SOL</span>
+          </p>
+        </div>
 
           <div
-            className="bg-[#111111] p-6 rounded-xl transition-all duration-200"
-            style={{ border: `1px solid ${alpha(0.08)}` }}
+            className="bg-[#111111] p-4 sm:p-6 rounded-xl transition-all duration-200" style={{ border: `1px solid ${alpha(0.08)}` }}
             onMouseEnter={e => {
               (e.currentTarget as HTMLElement).style.borderColor = accent;
               (e.currentTarget as HTMLElement).style.boxShadow = `0 0 28px ${hAlpha(0.1)}`;
@@ -180,19 +190,16 @@ const Wallet = () => {
               (e.currentTarget as HTMLElement).style.boxShadow = 'none';
             }}
           >
-            <div className="flex items-center gap-2 text-gray-600 text-xs uppercase tracking-widest mb-3">
-              <TrendingDown className="w-4 h-4" />
+            <div className="flex items-center gap-2 text-gray-600 text-xs uppercase tracking-widest mb-2 sm:mb-3">              <TrendingDown className="w-4 h-4" />
               Available Balance
             </div>
-            <p className="text-3xl font-bold font-mono tabular-nums" style={{ color: accent }}>
-              {((data?.availableBalance ?? 0) / 1e9).toFixed(4)}
+            <p className="text-xl sm:text-3xl font-bold font-mono tabular-nums" style={{ color: accent }}>              {((data?.availableBalance ?? 0) / 1e9).toFixed(4)}
               <span className="text-lg text-gray-500 ml-1.5">SOL</span>
             </p>
           </div>
 
           <div
-            className="bg-[#111111] p-6 rounded-xl transition-all duration-200"
-            style={{ border: `1px solid ${alpha(0.08)}` }}
+            className="bg-[#111111] p-4 sm:p-6 rounded-xl transition-all duration-200" style={{ border: `1px solid ${alpha(0.08)}` }}
             onMouseEnter={e => {
               (e.currentTarget as HTMLElement).style.borderColor = accent;
               (e.currentTarget as HTMLElement).style.boxShadow = `0 0 28px ${hAlpha(0.1)}`;
@@ -202,8 +209,7 @@ const Wallet = () => {
               (e.currentTarget as HTMLElement).style.boxShadow = 'none';
             }}
           >
-            <div className="flex items-center gap-2 text-gray-600 text-xs uppercase tracking-widest mb-3">
-              <Wallet2 className="w-4 h-4" />
+            <div className="flex items-center gap-2 text-gray-600 text-xs uppercase tracking-widest mb-2 sm:mb-3">              <Wallet2 className="w-4 h-4" />
               Wallet Address
             </div>
             {data?.walletAddress ? (
@@ -240,63 +246,86 @@ const Wallet = () => {
             </div>
           ) : (
             <>
-              <div className="grid grid-cols-12 gap-4 px-6 py-3 text-xs text-gray-600 uppercase tracking-widest border-b border-gray-800/40">
-                <div className="col-span-4">Ad</div>
-                <div className="col-span-2 text-right">Clicks</div>
-                <div className="col-span-2 text-right">CPC</div>
-                <div className="col-span-2 text-right">Total</div>
-                <div className="col-span-2 text-right">Status</div>
+              <div className="hidden sm:block">
+                <div className="grid grid-cols-12 gap-4 px-6 py-3 text-xs text-gray-600 uppercase tracking-widest border-b border-gray-800/40">
+                  <div className="col-span-4">Ad</div>
+                  <div className="col-span-2 text-right">Clicks</div>
+                  <div className="col-span-2 text-right">CPC</div>
+                  <div className="col-span-2 text-right">Total</div>
+                  <div className="col-span-2 text-right">Status</div>
+                </div>
+
+                <div className="divide-y divide-gray-800/40">
+                  {data.transactions.map((tx) => (
+                    <div key={tx.id} className="grid grid-cols-12 gap-4 px-6 py-5 items-center hover:bg-[#161616]/60 transition-colors duration-150">
+                      <div className="col-span-4 flex items-center gap-3">
+                        <div className="p-2 rounded-lg bg-[#161616] border border-gray-800/60 flex-shrink-0">
+                          <MousePointerClick className="w-4 h-4 text-gray-400" />
+                        </div>
+                        <div className="min-w-0">
+                          <p className="text-sm font-medium text-gray-200 truncate">{tx.adTitle}</p>
+                          <p className="text-xs text-gray-600 font-mono">{timeAgo(tx.date)}</p>
+                        </div>
+                      </div>
+                      <div className="col-span-2 text-right">
+                        <span className="font-mono text-sm text-gray-300 tabular-nums">{tx.clicks.toLocaleString()}</span>
+                      </div>
+                      <div className="col-span-2 text-right">
+                        <span className="font-mono text-sm text-gray-500 tabular-nums">{tx.cpc} SOL</span>
+                      </div>
+                      <div className="col-span-2 text-right">
+                        <span className="font-mono text-sm font-semibold tabular-nums" style={{ color: accent }}>{tx.amount} SOL</span>
+                      </div>
+                      <div className="col-span-2 text-right">
+                        <span className={`text-xs px-2 py-0.5 rounded font-mono tracking-wide border ${tx.status === 'Active' ? 'bg-gray-800 text-gray-300 border-gray-700' : 'bg-[#1a1a1a] text-gray-500 border-gray-800'}`}>
+                          {tx.status}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="grid grid-cols-12 gap-4 px-6 py-4 border-t border-gray-800/60 bg-[#0d0d0d]">
+                  <div className="col-span-4 text-xs text-gray-600 uppercase tracking-widest">Total</div>
+                  <div className="col-span-2 text-right font-mono text-sm text-gray-300 tabular-nums">
+                    {(data.totalClicks ?? 0).toLocaleString()}
+                  </div>
+                  <div className="col-span-2" />
+                  <div className="col-span-2 text-right font-mono text-sm font-bold tabular-nums" style={{ color: accent }}>
+                    {(data.totalSpent ?? 0).toFixed(6)} SOL
+                  </div>
+                  <div className="col-span-2" />
+                </div>
               </div>
 
-              <div className="divide-y divide-gray-800/40">
+              {/* Mobile cards */}
+              <div className="sm:hidden divide-y divide-gray-800/40">
                 {data.transactions.map((tx) => (
-                  <div key={tx.id} className="grid grid-cols-12 gap-4 px-6 py-5 items-center hover:bg-[#161616]/60 transition-colors duration-150">
-
-                    <div className="col-span-4 flex items-center gap-3">
-                      <div className="p-2 rounded-lg bg-[#161616] border border-gray-800/60 flex-shrink-0">
-                        <MousePointerClick className="w-4 h-4 text-gray-400" />
-                      </div>
-                      <div className="min-w-0">
+                  <div key={tx.id} className="px-4 py-4 hover:bg-[#161616]/60 transition-colors duration-150">
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <div className="p-1.5 rounded-lg bg-[#161616] border border-gray-800/60 flex-shrink-0">
+                          <MousePointerClick className="w-3.5 h-3.5 text-gray-400" />
+                        </div>
                         <p className="text-sm font-medium text-gray-200 truncate">{tx.adTitle}</p>
-                        <p className="text-xs text-gray-600 font-mono">{timeAgo(tx.date)}</p>
                       </div>
-                    </div>
-
-                    <div className="col-span-2 text-right">
-                      <span className="font-mono text-sm text-gray-300 tabular-nums">{tx.clicks.toLocaleString()}</span>
-                    </div>
-
-                    <div className="col-span-2 text-right">
-                      <span className="font-mono text-sm text-gray-500 tabular-nums">{tx.cpc} SOL</span>
-                    </div>
-
-                    <div className="col-span-2 text-right">
-                      <span className="font-mono text-sm font-semibold tabular-nums" style={{ color: accent }}>{tx.amount} SOL</span>
-                    </div>
-
-                    <div className="col-span-2 text-right">
-                      <span className={`text-xs px-2 py-0.5 rounded font-mono tracking-wide border ${tx.status === 'Active'
-                        ? 'bg-gray-800 text-gray-300 border-gray-700'
-                        : 'bg-[#1a1a1a] text-gray-500 border-gray-800'
-                        }`}>
+                      <span className={`text-xs px-2 py-0.5 rounded font-mono tracking-wide border flex-shrink-0 ml-2 ${tx.status === 'Active' ? 'bg-gray-800 text-gray-300 border-gray-700' : 'bg-[#1a1a1a] text-gray-500 border-gray-800'}`}>
                         {tx.status}
                       </span>
                     </div>
-
+                    <div className="flex items-center justify-between text-xs text-gray-600 font-mono">
+                      <span>{tx.clicks.toLocaleString()} clicks · {tx.cpc} SOL CPC</span>
+                      <span className="font-semibold" style={{ color: accent }}>{tx.amount} SOL</span>
+                    </div>
+                    <p className="text-[10px] text-gray-700 font-mono mt-1">{timeAgo(tx.date)}</p>
                   </div>
                 ))}
-              </div>
-
-              <div className="grid grid-cols-12 gap-4 px-6 py-4 border-t border-gray-800/60 bg-[#0d0d0d]">
-                <div className="col-span-4 text-xs text-gray-600 uppercase tracking-widest">Total</div>
-                <div className="col-span-2 text-right font-mono text-sm text-gray-300 tabular-nums">
-                  {(data.totalClicks ?? 0).toLocaleString()}
+                <div className="px-4 py-3 bg-[#0d0d0d] flex items-center justify-between">
+                  <span className="text-xs text-gray-600 uppercase tracking-widest">Total</span>
+                  <span className="font-mono text-sm font-bold tabular-nums" style={{ color: accent }}>
+                    {(data.totalSpent ?? 0).toFixed(6)} SOL
+                  </span>
                 </div>
-                <div className="col-span-2" />
-                <div className="col-span-2 text-right font-mono text-sm font-bold tabular-nums" style={{ color: accent }}>
-                  {(data.totalSpent ?? 0).toFixed(6)} SOL
-                </div>
-                <div className="col-span-2" />
               </div>
             </>
           )}

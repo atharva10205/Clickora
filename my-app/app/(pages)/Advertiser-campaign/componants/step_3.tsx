@@ -202,16 +202,17 @@ export default function Three({ next, back, adID }) {
         <div className="min-h-screen bg-[#0a0a0a] text-gray-300">
 
             <header className="bg-[#0c0c0c] border-b border-[#1f1f1f]">
-                <div className="max-w-6xl mx-auto px-6">
+                <div className="max-w-6xl mx-auto px-4 sm:px-6">
                     <div className="flex items-center justify-between h-14">
-                        <div className="flex items-center gap-3">
+                        <div className="flex items-center gap-2">
                             <span className="text-white font-semibold text-sm tracking-tight">Advertiser Campaign</span>
-                            <span className="text-gray-700">|</span>
-                            <span className="text-gray-500 text-sm">Create your first campaign</span>
+                            <span className="text-gray-700 hidden sm:inline">|</span>
+                            <span className="text-gray-500 text-sm hidden sm:inline">Create your first campaign</span>
                         </div>
                         <div className="flex items-center gap-3">
                             <button className="flex items-center gap-1.5 text-gray-600 hover:text-gray-300 transition-colors text-xs font-mono">
-                                <HelpCircle className="w-4 h-4" />Help
+                                <HelpCircle className="w-4 h-4" />
+                                <span className="hidden sm:inline">Help</span>
                             </button>
                             <div className="w-7 h-7 rounded-md bg-[#1a1a1a] border border-[#2a2a2a] flex items-center justify-center">
                                 <User className="w-4 h-4 text-gray-500" />
@@ -221,10 +222,10 @@ export default function Three({ next, back, adID }) {
                 </div>
             </header>
 
-            <main className="max-w-6xl mx-auto px-6 py-8">
+            <main className="max-w-6xl mx-auto px-4 sm:px-6 py-5 sm:py-8">
                 <div className="flex flex-col lg:flex-row gap-6">
 
-                    <aside className="lg:w-56 flex-shrink-0">
+                    <aside className="hidden lg:block lg:w-56 flex-shrink-0">
                         <div className="bg-[#111111] border border-gray-800/70 rounded-xl p-5 sticky top-8">
                             <h3 className="text-xs font-semibold text-gray-200 uppercase tracking-widest mb-5">Business Information</h3>
                             <div className="space-y-4">
@@ -256,8 +257,7 @@ export default function Three({ next, back, adID }) {
 
                     <div className="flex-1">
                         <div className="bg-[#111111] border border-gray-800/70 rounded-xl overflow-hidden">
-                            <div className="p-8">
-
+                            <div className="p-4 sm:p-8">
                                 <div className="flex items-center gap-2 text-xs text-gray-600 font-mono mb-4">
                                     <span>Step 3 of 3</span>
                                     <ChevronRight className="w-3 h-3" />
@@ -299,7 +299,7 @@ export default function Three({ next, back, adID }) {
                                             <p className="text-xs text-gray-600 mb-4">Your bid strategy defines how we should bid for your ad in auctions</p>
                                             <label className="text-xs text-gray-600 uppercase tracking-widest mb-2 block">Maximum cost per click</label>
                                             <div className="flex items-start gap-3">
-                                                <div>
+                                                <div className="flex-1 sm:flex-none">
                                                     <input
                                                         type="number"
                                                         placeholder="SOL amount"
@@ -308,7 +308,7 @@ export default function Three({ next, back, adID }) {
                                                             const v = Number(e.target.value);
                                                             if (v >= 0) set_maximim_cost_per_bid(v);
                                                         }}
-                                                        className="bg-[#0d0d0d] border border-gray-800/60 rounded-lg h-10 px-4 w-40 text-sm text-gray-200 font-mono [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none focus:outline-none transition-colors duration-150"
+                                                        className="bg-[#0d0d0d] border border-gray-800/60 rounded-lg h-10 px-4 w-full sm:w-40 text-sm text-gray-200 font-mono [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none focus:outline-none transition-colors duration-150"
                                                         style={{ borderColor: errors.maximim_cost_per_bid ? 'rgba(239,68,68,0.5)' : undefined }}
                                                         onFocus={e => e.currentTarget.style.borderColor = accent}
                                                         onBlur={e => e.currentTarget.style.borderColor = errors.maximim_cost_per_bid ? 'rgba(239,68,68,0.5)' : 'rgba(255,255,255,0.08)'}
@@ -336,8 +336,7 @@ export default function Three({ next, back, adID }) {
                                                     className="p-4 rounded-xl bg-[#0d0d0d]"
                                                     style={{ border: `1px solid ${errors.selected ? 'rgba(239,68,68,0.5)' : 'rgba(255,255,255,0.06)'}` }}
                                                 >
-                                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-
+                                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                                         <BudgetCard id="low" label={`${formatSOL(Cost[0]?.weekly || 0)} SOL`} cost={Cost[0]} selected={selected} onSelect={setSelected} formatSOL={formatSOL} accent={accent} alpha={alpha} />
                                                         <BudgetCard id="medium" label={`${formatSOL(Cost[1]?.weekly || 0)} SOL`} cost={Cost[1]} isRecommended selected={selected} onSelect={setSelected} formatSOL={formatSOL} accent={accent} alpha={alpha} />
                                                         <BudgetCard id="high" label={`${formatSOL(Cost[2]?.weekly || 0)} SOL`} cost={Cost[2]} selected={selected} onSelect={setSelected} formatSOL={formatSOL} accent={accent} alpha={alpha} />
@@ -416,21 +415,22 @@ export default function Three({ next, back, adID }) {
                                 )}
                             </div>
 
-                            <div className="px-8 py-5 bg-[#0d0d0d] border-t border-gray-800/60 flex items-center justify-between">
+                            <div className="px-4 sm:px-8 py-4 sm:py-5 bg-[#0d0d0d] border-t border-gray-800/60 flex items-center justify-between gap-3">
                                 <button
                                     onClick={back}
-                                    className="px-5 py-2.5 rounded-lg bg-[#161616] border border-gray-800/60 text-gray-400 text-sm font-medium hover:text-gray-200 hover:border-gray-600 transition-all duration-150"
+                                    className="flex-1 sm:flex-none px-5 py-2.5 rounded-lg bg-[#161616] border border-gray-800/60 text-gray-400 text-sm font-medium hover:text-gray-200 hover:border-gray-600 transition-all duration-150"
                                 >
                                     ← Back
                                 </button>
                                 <button
                                     onClick={Initialize_and_Deposit}
-                                    className="px-6 py-2.5 cursor-pointer rounded-lg bg-[#161616] text-gray-200 text-sm font-semibold hover:-translate-y-0.5 active:translate-y-0 transition-all duration-200"
+                                    className="flex-1 sm:flex-none px-6 py-2.5 cursor-pointer rounded-lg bg-[#161616] text-gray-200 text-sm font-semibold hover:-translate-y-0.5 active:translate-y-0 transition-all duration-200 whitespace-nowrap"
                                     style={{ border: `1px solid ${alpha(0.25)}` }}
                                     onMouseEnter={e => { e.currentTarget.style.borderColor = accent; e.currentTarget.style.boxShadow = `0 0 18px ${alpha(0.12)}`; e.currentTarget.style.color = '#ffffff'; }}
                                     onMouseLeave={e => { e.currentTarget.style.borderColor = alpha(0.25); e.currentTarget.style.boxShadow = 'none'; e.currentTarget.style.color = ''; }}
                                 >
-                                    Initialize & Deposit →
+                                    <span className="hidden sm:inline">Initialize & Deposit →</span>
+                                    <span className="sm:hidden">Deposit →</span>
                                 </button>
                             </div>
                         </div>
