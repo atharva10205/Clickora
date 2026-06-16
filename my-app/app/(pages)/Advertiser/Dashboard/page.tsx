@@ -319,7 +319,7 @@ const StatusDonut = ({ campaigns, accent }: { campaigns: Campaign[]; accent: str
     const pausedDash = total > 0 ? Math.max(0, (paused / total) * circumference - 3) : 0;
 
     return (
-        <div className="relative flex items-center justify-center">
+        <div className="relative flex items-center justify-center flex-shrink-0 w-32 h-32">
             <svg viewBox="0 0 120 120" className="w-32 h-32 -rotate-90">
                 <circle cx={cx} cy={cy} r={r} fill="none" stroke="#1a1a1a" strokeWidth="12" />
                 {active > 0 && (
@@ -503,76 +503,78 @@ const Dashboard = () => {
                                 <p className="text-xs text-gray-700 mt-1">Create your first campaign to see data here</p>
                             </div>
                         ) : (
-                            <div className="p-5 space-y-4">
+                            <div className="p-5">
+                                <div className="flex flex-col lg:flex-row gap-6">
+                                    <div className="flex-shrink-0 flex flex-col items-center">
+                                        <StatusDonut campaigns={campaigns} accent={accent} />
+                                        <div className="flex gap-6 mt-3">
+                                            <div className="text-center">
+                                                <p className="text-xs text-gray-600 mb-0.5">Active</p>
+                                                <p className="text-base font-bold font-mono tabular-nums" style={{ color: accent }}>
+                                                    {campaigns.filter(c => c.status === 'Active').length}
+                                                </p>
+                                            </div>
+                                            <div className="text-center">
+                                                <p className="text-xs text-gray-600 mb-0.5">Paused</p>
+                                                <p className="text-base font-bold font-mono tabular-nums text-zinc-500">
+                                                    {campaigns.filter(c => c.status === 'Paused').length}
+                                                </p>
+                                            </div>
+                                            <div className="text-center">
+                                                <p className="text-xs text-gray-600 mb-0.5">Total</p>
+                                                <p className="text-base font-bold font-mono tabular-nums text-white">
+                                                    {campaigns.length}
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </div>
 
-                                <div className="flex items-center gap-4">
-                                    <StatusDonut campaigns={campaigns} accent={accent} />
-                                    <div className="flex gap-6">
-                                        <div>
-                                            <p className="text-xs text-gray-600 mb-1">Active</p>
-                                            <p className="text-lg font-bold font-mono tabular-nums" style={{ color: accent }}>
-                                                {campaigns.filter(c => c.status === 'Active').length}
-                                            </p>
-                                        </div>
-                                        <div>
-                                            <p className="text-xs text-gray-600 mb-1">Paused</p>
-                                            <p className="text-lg font-bold font-mono tabular-nums text-zinc-500">
-                                                {campaigns.filter(c => c.status === 'Paused').length}
-                                            </p>
-                                        </div>
-                                        <div>
-                                            <p className="text-xs text-gray-600 mb-1">Total</p>
-                                            <p className="text-lg font-bold font-mono tabular-nums text-white">
-                                                {campaigns.length}
-                                            </p>
+                                    <div className="flex-1 min-w-0">
+                                        <div className="space-y-3 overflow-y-auto w-full"
+                                            style={{ maxHeight: '14rem', scrollbarWidth: 'thin', scrollbarColor: '#2a2a2a transparent' }}>
+                                            {campaigns.map((c, idx) => {
+                                                const sharePct = totalCampaignSpend > 0 ? (c.spend / totalCampaignSpend) * 100 : 0;
+                                                const isActive = c.status === 'Active';
+                                                return (
+                                                    <div key={c.name} className="w-full">
+                                                        <div className="flex items-center justify-between mb-1.5">
+                                                            <div className="flex items-center gap-2 min-w-0 flex-1 mr-4">
+                                                                <span className="text-xs text-gray-700 tabular-nums w-4 flex-shrink-0">{idx + 1}</span>
+                                                                <span className="w-1.5 h-1.5 rounded-full flex-shrink-0"
+                                                                    style={{ background: isActive ? accent : '#52525b' }} />
+                                                                <span className="text-sm text-gray-200 font-medium truncate flex-1">{c.name}</span>
+                                                                <span className="text-[10px] flex-shrink-0 px-1.5 py-0.5 rounded font-mono"
+                                                                    style={{
+                                                                        background: isActive ? `${accent}18` : '#27272a',
+                                                                        color: isActive ? accent : '#71717a'
+                                                                    }}>
+                                                                    {c.status}
+                                                                </span>
+                                                            </div>
+                                                            <div className="flex items-center gap-3 flex-shrink-0">
+                                                                <span className="text-xs text-gray-600 tabular-nums hidden sm:inline">{c.clicks.toLocaleString()} clicks</span>
+                                                                <span className="text-sm font-semibold tabular-nums font-mono w-24 text-right" style={{ color: accent }}>
+                                                                    {c.spend.toFixed(4)}
+                                                                    <span className="text-[10px] text-gray-600 font-normal ml-0.5">SOL</span>
+                                                                </span>
+                                                            </div>
+                                                        </div>
+                                                        <div className="h-1 w-full bg-[#1a1a1a] rounded-full overflow-hidden">
+                                                            <div className="h-full rounded-full transition-all duration-700"
+                                                                style={{
+                                                                    width: `${sharePct}%`,
+                                                                    background: isActive ? accent : '#3f3f46',
+                                                                    opacity: 0.7,
+                                                                }} />
+                                                        </div>
+                                                    </div>
+                                                );
+                                            })}
                                         </div>
                                     </div>
                                 </div>
 
-                                <div className="h-px bg-[#1a1a1a]" />
-
-                                <div className="space-y-3 overflow-y-auto"
-                                    style={{ maxHeight: '14rem', scrollbarWidth: 'thin', scrollbarColor: '#2a2a2a transparent' }}>
-                                    {campaigns.map((c, idx) => {
-                                        const sharePct = totalCampaignSpend > 0 ? (c.spend / totalCampaignSpend) * 100 : 0;
-                                        const isActive = c.status === 'Active';
-                                        return (
-                                            <div key={c.name}>
-                                                <div className="flex items-center justify-between mb-1.5">
-                                                    <div className="flex items-center gap-2 min-w-0">
-                                                        <span className="text-xs text-gray-700 tabular-nums w-4 flex-shrink-0">{idx + 1}</span>
-                                                        <span className="w-1.5 h-1.5 rounded-full flex-shrink-0"
-                                                            style={{ background: isActive ? accent : '#52525b' }} />
-                                                        <span className="text-sm text-gray-200 font-medium truncate max-w-[140px]">{c.name}</span>
-                                                        <span className="text-[10px] flex-shrink-0 px-1.5 py-0.5 rounded font-mono"
-                                                            style={{
-                                                                background: isActive ? `${accent}18` : '#27272a',
-                                                                color: isActive ? accent : '#71717a'
-                                                            }}>
-                                                            {c.status}
-                                                        </span>
-                                                    </div>
-                                                    <div className="flex items-center gap-2 flex-shrink-0 ml-2">
-                                                        <span className="text-xs text-gray-600">{c.clicks.toLocaleString()} clicks</span>
-                                                        <span className="text-sm font-semibold tabular-nums font-mono" style={{ color: accent }}>
-                                                            {c.spend.toFixed(4)}
-                                                            <span className="text-[10px] text-gray-600 font-normal ml-0.5">SOL</span>
-                                                        </span>
-                                                    </div>
-                                                </div>
-
-                                                <div className="h-1 bg-[#1a1a1a] rounded-full overflow-hidden">
-                                                    <div className="h-full rounded-full transition-all duration-700"
-                                                        style={{
-                                                            width: `${sharePct}%`,
-                                                            background: isActive ? accent : '#3f3f46',
-                                                            opacity: 0.7,
-                                                        }} />
-                                                </div>
-                                            </div>
-                                        );
-                                    })}
-                                </div>
+                                <div className="h-px bg-[#1a1a1a] mt-4" />
                             </div>
                         )}
                     </div>

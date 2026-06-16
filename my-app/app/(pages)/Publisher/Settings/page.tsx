@@ -147,7 +147,6 @@ const Settings = () => {
     return (
         <div className="flex h-screen bg-[#0a0a0a] text-gray-300 overflow-hidden">
 
-            {/* Sidebar overlay for mobile */}
             {sidebarOpen && (
                 <div
                     className="fixed inset-0 bg-black/60 z-20 lg:hidden"
@@ -162,13 +161,10 @@ const Settings = () => {
                 onClose={() => setSidebarOpen(false)}
             />
 
-            {/* Main scroll area */}
             <main className="flex-1 overflow-y-auto">
-                <div className="max-w-3xl mx-auto px-3 sm:px-6 lg:px-8 py-5 sm:py-8">
+                <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-5 sm:py-8">
 
-                    {/* Page header */}
                     <div className="mb-6 sm:mb-10 flex items-center gap-3">
-                        {/* Hamburger — mobile only */}
                         <button
                             onClick={() => setSidebarOpen(true)}
                             className="lg:hidden flex flex-col gap-[5px] p-2 rounded-md hover:bg-[#161616] transition-colors shrink-0"

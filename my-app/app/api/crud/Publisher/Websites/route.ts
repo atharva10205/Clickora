@@ -26,7 +26,7 @@ export async function GET() {
             })
         ]);
 
-        const accent = user?.accent ?? "#10B981";
+        const accent = user?.accent ?? "#ffffff";
 
         if (publishers.length === 0) {
             return NextResponse.json({ sites: [], accent });

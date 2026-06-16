@@ -13,7 +13,7 @@ const Websites = () => {
 
     const [websites, setWebsites] = useState([]);
     const [copiedUrl, setCopiedUrl] = useState<string | null>(null);
-    const [accent, setAccent] = useState('#10B981');
+    const [accent, setAccent] = useState('#ffffff');
     const [sortKey, setSortKey] = useState<'name' | 'earnings' | 'impressions' | 'clicks' | 'date'>('date');
     const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
     const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -24,7 +24,7 @@ const Websites = () => {
                 const res = await fetch("/api/crud/Publisher/Websites");
                 const data = await res.json();
 
-                setAccent(data.accent ?? '#10B981');
+                setAccent(data.accent ?? '#ffffff');
 
                 const websitesWithMetrics = (data.sites ?? []).map(site => ({
                     ...site,
@@ -127,7 +127,6 @@ const Websites = () => {
                         </button>
                     </div>
 
-                    {/* Sort controls — scrollable on mobile */}
                     <div
                         className="flex items-center gap-2 mb-6 font-mono overflow-x-auto"
                         style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
@@ -152,7 +151,6 @@ const Websites = () => {
                         ))}
                     </div>
 
-                    {/* Website cards */}
                     <div className="grid gap-4">
                         {websites.length === 0 ? (
                             <div className="flex items-center justify-center py-24 text-gray-600 text-sm">

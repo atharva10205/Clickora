@@ -83,7 +83,7 @@ const Campaigns = () => {
     const router = useRouter();
     const [campaigns, setCampaigns] = useState<Campaign[]>([]);
     const [loading, setLoading] = useState(true);
-    const [accent, setAccent] = useState('#10B981');
+    const [accent, setAccent] = useState('#ffffff');
     const [showBudgetPopup, setShowBudgetPopup] = useState(false);
     const [toasts, setToasts] = useState<Toast[]>([]);
     const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -100,7 +100,7 @@ const Campaigns = () => {
             try {
                 const res = await fetch("/api/crud/Advertiser/Campaings");
                 const data = await res.json();
-                setAccent(data.accent ?? '#10B981');
+                setAccent(data.accent ?? '#ffffff');
                 const rawCampaigns = Array.isArray(data) ? data : (data.campaigns ?? []);
                 const programId = new PublicKey("5AhkXaS77PEWP8pDdQx3SMDbEizqJFns6an8J42dXUuw");
 

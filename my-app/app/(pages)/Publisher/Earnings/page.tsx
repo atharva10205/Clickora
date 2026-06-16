@@ -1,7 +1,8 @@
 'use client'
 
 import React, { useEffect, useState } from 'react';
-import { BarChart3, ArrowDownRight, DollarSign, Download, TrendingUp, Pencil, Wallet, Clock, Hash, AlertCircle, X, ArrowDownToLine } from 'lucide-react';
+import { BarChart3, ArrowDownRight, DollarSign, Download, TrendingUp, Pencil, Wallet, Clock, Hash, AlertCircle, X, ArrowDownToLine, Link, Link2Off } from 'lucide-react';
+import { WalletName } from '@solana/wallet-adapter-base';
 import Sidebar from '../sidebar/sidebar';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useSession } from "next-auth/react";
@@ -196,6 +197,18 @@ const Earnings = () => {
     const [toasts, setToasts] = React.useState<Toast[]>([]);
     const [sidebarOpen, setSidebarOpen] = useState(false);
 
+
+    useEffect(() => {
+        if (wallet.name === 'Phantom' && !wallet.connected && !wallet.connecting) {
+            wallet.connect().catch((e: any) => {
+                if (!e?.message?.includes("User rejected") && !e?.message?.includes("User declined")) {
+                    addToast(e?.message || "Wallet connection failed", "error");
+                }
+            });
+        }
+    }, [wallet.name]);
+
+
     const addToast = (message: string, type: Toast['type'] = 'error') =>
         setToasts(prev => [...prev, { id: Date.now(), message, type }]);
 
@@ -221,7 +234,7 @@ const Earnings = () => {
 
     const earningsRecords = fetchquery.data?.earningsRecords ?? [];
     const transactionList = fetchquery.data?.transactionList ?? [];
-    const ACCENT = fetchquery.data?.accent ?? '#0010FF';
+    const ACCENT = fetchquery.data?.accent ?? '#ffffff';
 
     const hAlpha = (op: number) => {
         const r = parseInt(ACCENT.slice(1, 3), 16);
@@ -229,6 +242,7 @@ const Earnings = () => {
         const b = parseInt(ACCENT.slice(5, 7), 16);
         return `rgba(${r},${g},${b},${op})`;
     };
+
 
     const totalBalanceSOL = earningsRecords.reduce((sum, tx) => sum + tx.claimable_amount, 0) / 1_000_000_000;
     const totalEarned = transactionList.reduce((sum, tx) => sum + tx.earnings, 0);
@@ -362,6 +376,8 @@ const Earnings = () => {
         }
     };
 
+
+
     return (
         <>
             <ToastContainer toasts={toasts} onDismiss={dismissToast} />
@@ -430,26 +446,68 @@ const Earnings = () => {
                                 </p>
                                 <p className="text-xs text-gray-600 mb-6 sm:mb-8 font-mono"></p>
 
-                                <button
-                                    onClick={Withdraw_BTN}
-                                    disabled={withdrawing}
-                                    className="flex cursor-pointer items-center gap-2 px-5 py-2.5 sm:px-6 sm:py-3 rounded-xl bg-[#161616] text-gray-200 text-sm font-semibold font-mono hover:-translate-y-0.5 active:translate-y-0 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed disabled:translate-y-0"
-                                    style={{ border: `1px solid ${alpha(0.18)}` }}
-                                    onMouseEnter={e => {
-                                        if (withdrawing) return;
-                                        e.currentTarget.style.borderColor = ACCENT;
-                                        e.currentTarget.style.boxShadow = `0 0 18px ${hAlpha(0.2)}`;
-                                        e.currentTarget.style.color = '#ffffff';
-                                    }}
-                                    onMouseLeave={e => {
-                                        e.currentTarget.style.borderColor = alpha(0.18);
-                                        e.currentTarget.style.boxShadow = 'none';
-                                        e.currentTarget.style.color = '';
-                                    }}
-                                >
-                                    <Download className="w-4 h-4" />
-                                    Withdraw
-                                </button>
+                                <div className="flex items-center gap-3">
+                                    <button
+                                        onClick={Withdraw_BTN}
+                                        disabled={withdrawing}
+                                        className="flex cursor-pointer items-center gap-2 px-5 py-2.5 sm:px-6 sm:py-3 rounded-xl bg-[#161616] text-gray-200 text-sm font-semibold font-mono hover:-translate-y-0.5 active:translate-y-0 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed disabled:translate-y-0"
+                                        style={{ border: `1px solid ${alpha(0.18)}` }}
+                                        onMouseEnter={e => {
+                                            if (withdrawing) return;
+                                            e.currentTarget.style.borderColor = ACCENT;
+                                            e.currentTarget.style.boxShadow = `0 0 18px ${hAlpha(0.2)}`;
+                                            e.currentTarget.style.color = '#ffffff';
+                                        }}
+                                        onMouseLeave={e => {
+                                            e.currentTarget.style.borderColor = alpha(0.18);
+                                            e.currentTarget.style.boxShadow = 'none';
+                                            e.currentTarget.style.color = '';
+                                        }}
+                                    >
+                                        <Download className="w-4 h-4" />
+                                        Withdraw
+                                    </button>
+
+                                    <button
+                                        onClick={async () => {
+                                            try {
+                                                if (wallet.connected) {
+                                                    await wallet.disconnect();
+                                                    addToast("Wallet disconnected", "info");
+                                                } else {
+                                                    wallet.select('Phantom' as WalletName);
+
+                                                }
+                                            } catch (e: any) {
+                                                if (e?.message?.includes("User rejected") || e?.message?.includes("User declined")) {
+                                                    addToast("Connection cancelled", "info");
+                                                } else {
+                                                    addToast(e?.message || "Wallet action failed", "error");
+                                                }
+                                            }
+                                        }}
+                                        disabled={withdrawing}
+                                        className="flex cursor-pointer items-center gap-2 px-5 py-2.5 sm:px-6 sm:py-3 rounded-xl bg-[#161616] text-gray-200 text-sm font-semibold font-mono hover:-translate-y-0.5 active:translate-y-0 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed disabled:translate-y-0"
+                                      style={{ border: `1px solid ${wallet.connected ? hAlpha(0.4) : alpha(0.18)}` }}
+                                        onMouseEnter={e => {
+                                            if (withdrawing) return;
+                                            e.currentTarget.style.borderColor = ACCENT;
+                                            e.currentTarget.style.boxShadow = `0 0 18px ${hAlpha(0.2)}`;
+                                            e.currentTarget.style.color = '#ffffff';
+                                        }}
+                                        onMouseLeave={e => {
+                                            e.currentTarget.style.borderColor = wallet.connected ? hAlpha(0.4) : alpha(0.18);
+                                            e.currentTarget.style.boxShadow = 'none';
+                                            e.currentTarget.style.color = '';
+                                        }}
+                                    >
+                                       {wallet.connected ? (
+                                            <span style={{ color: ACCENT }}>Wallet Connected</span>
+                                        ) : (
+                                            <span>Connect Wallet</span>
+                                        )}
+                                    </button>
+                                </div>
 
                                 <div className="mt-6 sm:mt-8">
                                     <p className="text-xs text-gray-600 uppercase tracking-widest mb-1.5 font-mono">Receiver's address</p>

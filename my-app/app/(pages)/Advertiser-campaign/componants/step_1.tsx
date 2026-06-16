@@ -225,7 +225,7 @@ export default function One({ next, setAdID }: OneProps) {
                                 <h1 className="text-xl font-semibold text-white tracking-tight mb-1">Tell us about your business</h1>
                                 <p className="text-xs text-gray-600 mb-8">Get personalized suggestions based on your business information</p>
 
-=                                <div className="mb-8">
+                              <div className="mb-8">
                                     <label className="text-xs text-gray-600 uppercase tracking-widest mb-2 block">Business Name</label>
                                     <input
                                         type="text"

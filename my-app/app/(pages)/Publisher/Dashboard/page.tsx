@@ -5,7 +5,6 @@ import { Link2 } from 'lucide-react';
 import Sidebar from '../sidebar/sidebar';
 import { useRouter } from 'next/navigation';
 import { useSession } from "next-auth/react";
-import { useQuery } from '@tanstack/react-query';
 import Chart from 'chart.js/auto';
 
 type DashboardData = {
@@ -305,25 +304,44 @@ const Dashboard = () => {
     const router = useRouter();
     const { status } = useSession();
 
-    const dashboardQuery = useQuery({
-        queryKey: ['dashboard'],
-        queryFn: fetchDashboardData,
-        enabled: status === 'authenticated',
-    });
-
-    const websitesQuery = useQuery({
-        queryKey: ['websites'],
-        queryFn: fetchWebsites,
-        enabled: status === 'authenticated',
-    });
+    const [dashboardData, setDashboardData] = useState<DashboardData | null>(null);
+    const [websites, setWebsites] = useState<Website[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
+    const [error, setError] = useState(false);
 
     const [sidebarOpen, setSidebarOpen] = useState(false);
-    const accent = dashboardQuery.data?.accent ?? DEFAULT_ACCENT;
-    const websites = Array.isArray(websitesQuery.data) ? websitesQuery.data : [];
-    const isLoading = dashboardQuery.isLoading || websitesQuery.isLoading;
-    const hasError = dashboardQuery.error || websitesQuery.error;
 
-    if (isLoading) {
+    useEffect(() => {
+        if (status !== 'authenticated') return;
+
+        const fetchData = async () => {
+            setIsLoading(true);
+            setError(false);
+
+            try {
+                const [dashboardRes, websitesRes] = await Promise.all([
+                    fetchDashboardData(),
+                    fetchWebsites()
+                ]);
+
+                setDashboardData(dashboardRes);
+                setWebsites(Array.isArray(websitesRes) ? websitesRes : []);
+            } catch (err) {
+                console.error('Error fetching data:', err);
+                setError(true);
+            } finally {
+                setIsLoading(false);
+            }
+        };
+
+        fetchData();
+    }, [status]);
+
+    const accent = dashboardData?.accent ?? DEFAULT_ACCENT;
+    const isLoading_ = isLoading;
+    const hasError = error;
+
+    if (isLoading_) {
         return (
             <div className="flex h-screen bg-[#0a0a0a] text-gray-200">
                 <Sidebar activeTab={activeTab} isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
