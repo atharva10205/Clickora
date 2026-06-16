@@ -487,7 +487,7 @@ const Earnings = () => {
                                             }
                                         }}
                                         disabled={withdrawing}
-                                        className="flex cursor-pointer items-center gap-2 px-5 py-2.5 sm:px-6 sm:py-3 rounded-xl bg-[#161616] text-gray-200 text-sm font-semibold font-mono hover:-translate-y-0.5 active:translate-y-0 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed disabled:translate-y-0"
+                                        className="flex cursor-pointer items-center gap-2 px-4 py-2.5 sm:px-6 sm:py-3 rounded-xl bg-[#161616] text-gray-200 text-sm font-semibold font-mono hover:-translate-y-0.5 active:translate-y-0 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed disabled:translate-y-0"
                                       style={{ border: `1px solid ${wallet.connected ? hAlpha(0.4) : alpha(0.18)}` }}
                                         onMouseEnter={e => {
                                             if (withdrawing) return;
