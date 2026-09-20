@@ -102,11 +102,14 @@ export default function Three({ next, back, adID }) {
     const { publicKey: walletPublicKey, connect, disconnect, select, wallet } = ClintKey;
     useEffect(() => { setErrors({}); }, [selected, Customclick]);
 
-    useEffect(() => {
-        if (wallet && !walletPublicKey) {
-            connect().catch(err => console.error("Auto-connect failed", err));
-        }
-    }, [wallet]);
+   useEffect(() => {
+    if (wallet && !walletPublicKey) {
+        connect().catch(err => {
+            console.error("Auto-connect failed", err);
+            alert("Auto-connect failed: " + (err?.message ?? "unknown error"));
+        });
+    }
+}, [wallet]);
 
     const formatSOL = (amount: number): string => parseFloat(amount.toFixed(8)).toString();
 
@@ -179,15 +182,18 @@ export default function Three({ next, back, adID }) {
         })));
     };
 
-    const connectPhantom = async () => {
-        try {
-            if (!wallet) {
-                select("Phantom" as any);
-                return;
-            }
-            await connect();
-        } catch (err) { console.error("Wallet connection failed", err); }
-    };
+ const connectPhantom = async () => {
+    try {
+        if (!wallet) {
+            select("Phantom" as any);
+            return;
+        }
+        await connect();
+    } catch (err: any) {
+        console.error("Wallet connection failed", err);
+        alert("Wallet connection failed: " + (err?.message ?? "unknown error"));
+    }
+};
     const disconnectPhantom = async () => {
         await disconnect();
     };
@@ -270,7 +276,7 @@ export default function Three({ next, back, adID }) {
                                 {!walletPublicKey && (
                                     <button
                                         onClick={connectPhantom}
-                                        className="px-6 py-2.5 rounded-lg bg-[#161616] text-gray-200 text-sm font-semibold hover:-translate-y-0.5 transition-all duration-200"
+                                        className="px-6 py-2.5 rounded-lg bg-[#161616] cursor-pointer text-gray-200 text-sm font-semibold hover:-translate-y-0.5 transition-all duration-200"
                                         style={{ border: `1px solid ${alpha(0.25)}` }}
                                         onMouseEnter={e => { e.currentTarget.style.borderColor = accent; e.currentTarget.style.boxShadow = `0 0 18px ${alpha(0.12)}`; }}
                                         onMouseLeave={e => { e.currentTarget.style.borderColor = alpha(0.25); e.currentTarget.style.boxShadow = 'none'; }}

@@ -89,11 +89,13 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
 import { S3Client, DeleteObjectCommand } from "@aws-sdk/client-s3";
 
 const s3Client = new S3Client({
-    region: process.env.AWS_REGION!,
+    region: process.env.B2_REGION!,
+    endpoint: process.env.B2_ENDPOINT!,
     credentials: {
-        accessKeyId: process.env.AWS_ACCESS_KEY_ID!,
-        secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY!,
+        accessKeyId: process.env.B2_ACCESS_KEY_ID!,
+        secretAccessKey: process.env.B2_SECRET_ACCESS_KEY!,
     },
+    forcePathStyle: true,
 });
 
 export async function DELETE(req: Request, { params }: { params: Promise<{ id: string }> }) {
@@ -114,8 +116,8 @@ export async function DELETE(req: Request, { params }: { params: Promise<{ id: s
             const url = new URL(ad.imageUrl);
             const key = url.pathname.slice(1);
 
-            await s3Client.send(new DeleteObjectCommand({
-                Bucket: process.env.AWS_S3_BUCKET_NAME!,
+                       await s3Client.send(new DeleteObjectCommand({
+                Bucket: process.env.B2_BUCKET_NAME!,
                 Key: key,
             }));
         } catch (err) {

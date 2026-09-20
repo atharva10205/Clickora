@@ -1,8 +1,34 @@
 import { selectAdsForPublisher } from "@/app/lib/ad_matching";
 import crypto from 'crypto';
+import { S3Client, GetObjectCommand } from "@aws-sdk/client-s3";
+import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 
 
 const SECRET = process.env.TRACKING_SECRET!;
+
+const s3Client = new S3Client({
+  region: process.env.B2_REGION!,
+  endpoint: process.env.B2_ENDPOINT!,
+  credentials: {
+    accessKeyId: process.env.B2_ACCESS_KEY_ID!,
+    secretAccessKey: process.env.B2_SECRET_ACCESS_KEY!,
+  },
+  forcePathStyle: true,
+});
+
+async function getSignedImageUrl(imageUrl: string): Promise<string> {
+  try {
+    const key = new URL(imageUrl).pathname.slice(1);
+    return await getSignedUrl(
+      s3Client,
+      new GetObjectCommand({ Bucket: process.env.B2_BUCKET_NAME!, Key: key }),
+      { expiresIn: 3600 }
+    );
+  } catch (err) {
+    console.error("Failed to sign B2 URL:", imageUrl, err);
+    return imageUrl;
+  }
+}
 
 
 function corsHeaders() {
@@ -49,10 +75,14 @@ export async function GET(request: Request) {
         { status: 404, headers: { ...corsHeaders(), "Content-Type": "application/json" } }
       );
     }
-
     const randomAd = ads[Math.floor(Math.random() * ads.length)];
 
+    const signedImageUrl = randomAd.imageUrl
+      ? await getSignedImageUrl(randomAd.imageUrl)
+      : randomAd.imageUrl;
+
     const token = createTrackingToken(randomAd.id, publisher_website_url);
+
 
     const adData = JSON.stringify({
       adId: randomAd.id,
@@ -158,8 +188,8 @@ export async function GET(request: Request) {
 <body>
     <a href="https://example.com/product" class="ad-container">
         <div class="ad-image-wrapper">
-            <img 
-                src="${randomAd.imageUrl}"
+                       <img 
+                src="${signedImageUrl}"
                 alt="Premium Wireless Headphones" 
                 class="ad-image"
             />

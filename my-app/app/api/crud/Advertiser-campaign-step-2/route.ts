@@ -2,13 +2,14 @@ import { prisma } from "@/app/lib/prisma";
 import { NextResponse } from "next/server";
 import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
 import { v4 as uuidv4 } from "uuid";
-
 const s3Client = new S3Client({
-    region: process.env.AWS_REGION!,
+    region: process.env.B2_REGION!,
+    endpoint: process.env.B2_ENDPOINT!,
     credentials: {
-        accessKeyId: process.env.AWS_ACCESS_KEY_ID!,
-        secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY!,
+        accessKeyId: process.env.B2_ACCESS_KEY_ID!,
+        secretAccessKey: process.env.B2_SECRET_ACCESS_KEY!,
     },
+    forcePathStyle: true,
 });
 
 async function uploadToS3(file: File, folder = "campaign-images"): Promise<string> {
@@ -17,8 +18,8 @@ async function uploadToS3(file: File, folder = "campaign-images"): Promise<strin
         const fileExtension = file.name.split(".").pop() || "jpg";
         const fileName = `${folder}/${uuidv4()}.${fileExtension}`;
 
-        const uploadParams = {
-            Bucket: process.env.AWS_S3_BUCKET_NAME!,
+               const uploadParams = {
+            Bucket: process.env.B2_BUCKET_NAME!,
             Key: fileName,
             Body: buffer,
             ContentType: file.type,
@@ -27,7 +28,7 @@ async function uploadToS3(file: File, folder = "campaign-images"): Promise<strin
         const command = new PutObjectCommand(uploadParams);
         await s3Client.send(command);
 
-        const fileUrl = `https://${process.env.AWS_S3_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${fileName}`;
+        const fileUrl = `https://${process.env.B2_BUCKET_NAME}.s3.${process.env.B2_REGION}.backblazeb2.com/${fileName}`;
         return fileUrl;
 
     } catch (error) {
